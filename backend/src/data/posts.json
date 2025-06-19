@@ -1,0 +1,106 @@
+{
+  "posts": [
+    {
+      "id": "1748228333012",
+      "title": "Prueba",
+      "content": "Prueba con fotos de lo que hemos avanzado ",
+      "excerpt": "Prueba con fotos",
+      "section": "adultos",
+      "status": "published",
+      "featured": "true",
+      "tags": [
+        "Adultos"
+      ],
+      "seo": {
+        "metaTitle": "Prueba",
+        "metaDescription": "Prueba",
+        "keywords": "Prueba 1"
+      },
+      "author": "1",
+      "authorName": "Administrador Principal",
+      "slug": "fsfsf",
+      "readTime": "1 min",
+      "thumbnail": "/uploads/posts/1748228332998-578071470.png",
+      "views": 6,
+      "likes": 16,
+      "comments": [],
+      "createdAt": "2025-05-26T02:58:53.012Z",
+      "updatedAt": "2025-06-18T05:22:26.079Z",
+      "publishedAt": "2025-05-26T02:58:53.012Z",
+      "likedBy": [
+        "1"
+      ],
+      "viewedBy": [
+        "1"
+      ]
+    },
+    {
+      "id": "1749617945820",
+      "title": "Nueva investigación ",
+      "content": "Investigacion",
+      "excerpt": "Prueba ",
+      "section": "noticias",
+      "status": "published",
+      "featured": "false",
+      "tags": [
+        "Noticias"
+      ],
+      "seo": {
+        "metaTitle": "",
+        "metaDescription": "",
+        "keywords": ""
+      },
+      "author": "2",
+      "authorName": "Gestor de Contenido",
+      "slug": "nueva-investigaci-n",
+      "readTime": "1 min",
+      "thumbnail": "/uploads/posts/1749617945810-739522358.jpeg",
+      "views": 1,
+      "likes": 1,
+      "comments": [],
+      "createdAt": "2025-06-11T04:59:05.820Z",
+      "updatedAt": "2025-06-11T04:59:13.152Z",
+      "publishedAt": "2025-06-11T04:59:13.152Z",
+      "viewedBy": [
+        "1"
+      ],
+      "likedBy": [
+        "1"
+      ]
+    },
+    {
+      "id": "1750220697533",
+      "title": "Prueba",
+      "content": "Prueba niños ",
+      "excerpt": "Prueba con fotos",
+      "section": "ninos",
+      "status": "published",
+      "featured": "true",
+      "tags": [
+        ""
+      ],
+      "seo": {
+        "metaTitle": "Prueba",
+        "metaDescription": "",
+        "keywords": "Prueba 1"
+      },
+      "author": "1",
+      "authorName": "Administrador Principal",
+      "slug": "prueba",
+      "readTime": "1 min",
+      "thumbnail": "/uploads/posts/1750220697528-296489413.png",
+      "views": 1,
+      "likes": 1,
+      "comments": [],
+      "createdAt": "2025-06-18T04:24:57.533Z",
+      "updatedAt": "2025-06-18T05:45:30.218Z",
+      "publishedAt": "2025-06-18T04:24:57.533Z",
+      "likedBy": [
+        "1"
+      ],
+      "viewedBy": [
+        "1"
+      ]
+    }
+  ]
+}

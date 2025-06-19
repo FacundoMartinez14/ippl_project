@@ -1,0 +1,214 @@
+{
+  "activities": [
+    {
+      "id": "1",
+      "type": "new_patient",
+      "description": "Nuevo paciente registrado: María González",
+      "actor": "Dr. Juan Pérez",
+      "timestamp": "2024-03-19T10:30:00Z"
+    },
+    {
+      "id": "2",
+      "type": "new_post",
+      "description": "Nuevo artículo publicado: \"Manejo del estrés en tiempos difíciles\"",
+      "actor": "Dra. Ana Martínez",
+      "timestamp": "2024-03-19T11:15:00Z"
+    },
+    {
+      "id": "3",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con Carlos Rodríguez",
+      "actor": "Dr. Juan Pérez",
+      "timestamp": "2024-03-19T12:00:00Z"
+    },
+    {
+      "id": "4",
+      "type": "appointment_update",
+      "description": "Cita completada con Carlos Rodríguez",
+      "actor": "Dr. Juan Pérez",
+      "timestamp": "2024-03-19T13:30:00Z"
+    },
+    {
+      "id": "5",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Técnicas de relajación\"",
+      "actor": "Dra. Ana Martínez",
+      "timestamp": "2024-03-19T14:45:00Z"
+    },
+    {
+      "id": "9cdcf440-b8b6-48d1-aba8-61536e80a38e",
+      "type": "patient_delete",
+      "description": "Paciente eliminado",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T03:35:28.986Z"
+    },
+    {
+      "id": "c8fb4c0f-be48-4277-8392-2cfa3e3203a2",
+      "type": "patient_delete",
+      "description": "Paciente eliminado",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T03:35:32.088Z"
+    },
+    {
+      "id": "bbbd01b9-6522-49ba-aa18-8800bd7f2651",
+      "type": "new_post",
+      "description": "Nuevo artículo publicado: \"Nueva investigación \"",
+      "actor": "Gestor de Contenido",
+      "timestamp": "2025-06-11T04:59:05.878Z"
+    },
+    {
+      "id": "c9b6248e-b231-4d52-8b56-3545a49c5175",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Nueva investigación \"",
+      "actor": "Gestor de Contenido",
+      "timestamp": "2025-06-11T04:59:13.188Z"
+    },
+    {
+      "id": "e691b05d-74de-44cd-8585-f643c213fc01",
+      "type": "patient_delete",
+      "description": "Paciente eliminado",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T06:40:58.461Z"
+    },
+    {
+      "id": "ac92b057-2474-46b8-9ba9-49eeece83d59",
+      "type": "patient_delete",
+      "description": "Paciente eliminado",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T06:41:00.354Z"
+    },
+    {
+      "id": "3e9a0bc9-0465-44bd-b34d-83c9dd88f025",
+      "type": "patient_delete",
+      "description": "Paciente eliminado",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T06:41:02.281Z"
+    },
+    {
+      "id": "2100a92e-a451-4262-bb6d-669c8fa8637f",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T07:08:31.157Z"
+    },
+    {
+      "id": "2e584052-b44c-4416-99b3-2502bb278d70",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T14:57:49.541Z"
+    },
+    {
+      "id": "f38b4455-f69c-4ae1-b1c4-c23daddb2970",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T15:15:11.449Z"
+    },
+    {
+      "id": "f568b907-de0e-429e-bed6-a882d297bd97",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T15:16:24.278Z"
+    },
+    {
+      "id": "f254c738-5c22-4516-9b50-8cb75e4f952c",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T15:17:15.317Z"
+    },
+    {
+      "id": "4e68422e-de65-416d-9749-93c79d533832",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T15:34:19.027Z"
+    },
+    {
+      "id": "e9913584-a7f9-4a9b-bc36-794f6a255aef",
+      "type": "new_appointment",
+      "description": "Nueva cita programada con undefined",
+      "actor": "Sistema",
+      "timestamp": "2025-06-11T15:44:37.254Z"
+    },
+    {
+      "id": "ad6b08f5-8d72-4a14-8af0-2435a5436b9b",
+      "type": "new_post",
+      "description": "Nuevo artículo publicado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T04:24:57.568Z"
+    },
+    {
+      "id": "8b85fd2c-db17-4685-8753-08a82d85ee21",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T04:45:33.075Z"
+    },
+    {
+      "id": "5f155c04-4b00-4d26-9988-a557a0532c7e",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T04:48:48.628Z"
+    },
+    {
+      "id": "7b167f89-9066-4b88-bc8a-f82a314d940a",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T04:50:03.842Z"
+    },
+    {
+      "id": "d8bb7c97-0243-4989-b809-8589352cc1ae",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:12:26.509Z"
+    },
+    {
+      "id": "37382643-fe2a-4842-a2f2-0107e73b7c91",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:18:45.328Z"
+    },
+    {
+      "id": "147b879f-dd29-4a1f-97a6-a93b350bd183",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:19:03.172Z"
+    },
+    {
+      "id": "9dd9c432-54a8-4cbe-b5dc-c9e718d84f79",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:22:26.131Z"
+    },
+    {
+      "id": "1184d543-9559-4b57-9357-5d62bbdc35b8",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:36:20.223Z"
+    },
+    {
+      "id": "e4faea4a-868b-4fb0-bc6a-6a5f88516a9c",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:43:12.109Z"
+    },
+    {
+      "id": "e248a932-8286-4242-af58-7551b34c56ed",
+      "type": "post_update",
+      "description": "Artículo actualizado: \"Prueba\"",
+      "actor": "Administrador Principal",
+      "timestamp": "2025-06-18T05:45:30.259Z"
+    }
+  ]
+}

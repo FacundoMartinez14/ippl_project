@@ -1,0 +1,56 @@
+{
+  "patients": [
+    {
+      "id": "1749624132938",
+      "name": "Paciente ejemplo",
+      "description": "Ejemplo",
+      "createdAt": "2025-06-11T06:42:12.938Z",
+      "status": "active",
+      "professionalId": "3",
+      "assignedAt": "2025-06-11T15:34:18.972Z",
+      "nextAppointment": "2025-06-12",
+      "textNote": "ejemplo",
+      "professionalName": "Dr. Juan Pérez",
+      "sessionCost": 100000,
+      "commission": 20000
+    },
+    {
+      "id": "1749624623459",
+      "name": "Paciente ejemplo 2",
+      "description": "Ejemplo 2",
+      "createdAt": "2025-06-11T06:50:23.459Z",
+      "status": "active",
+      "professionalId": "4",
+      "assignedAt": "2025-06-11T15:15:11.389Z",
+      "nextAppointment": "2025-06-11",
+      "professionalName": "Dra. María García",
+      "textNote": "Ejemplo"
+    },
+    {
+      "id": "1749625666803",
+      "name": "Paciente 3 ",
+      "description": "Ejemplo 3",
+      "createdAt": "2025-06-11T07:07:46.803Z",
+      "status": "active",
+      "professionalId": "4",
+      "assignedAt": "2025-06-11T15:16:52.312Z",
+      "nextAppointment": "",
+      "textNote": "Ejemplo",
+      "professionalName": "Dra. María García"
+    },
+    {
+      "id": "1749626852652",
+      "name": "Angel",
+      "description": "Ejemplo",
+      "createdAt": "2025-06-11T07:27:32.652Z",
+      "status": "active",
+      "professionalId": "3",
+      "professionalName": "Dr. Juan Pérez",
+      "assignedAt": "2025-06-11T16:30:59.830Z",
+      "nextAppointment": "",
+      "textNote": "Eejmplo",
+      "sessionCost": 200000,
+      "commission": 40000
+    }
+  ]
+}

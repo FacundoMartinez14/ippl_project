@@ -1,0 +1,51 @@
+import { useEffect, useCallback } from 'react';
+import io, { Socket } from 'socket.io-client';
+import { API_URL } from '../config/config';
+
+let socket: Socket | null = null;
+
+export const useSocket = (role: string) => {
+  const connectSocket = useCallback(() => {
+    if (!socket) {
+      socket = io(API_URL);
+
+      socket.on('connect', () => {
+        console.log('Conectado al servidor de WebSocket');
+        socket?.emit('joinRoom', role);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('Desconectado del servidor de WebSocket');
+      });
+    }
+    return socket;
+  }, [role]);
+
+  const emitUpdate = useCallback((data: any) => {
+    socket?.emit('dataUpdate', data);
+  }, []);
+
+  const subscribeToUpdates = useCallback((callback: (data: any) => void) => {
+    socket?.on('dataUpdated', callback);
+    return () => {
+      socket?.off('dataUpdated', callback);
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentSocket = connectSocket();
+
+    return () => {
+      if (currentSocket) {
+        currentSocket.disconnect();
+        socket = null;
+      }
+    };
+  }, [connectSocket]);
+
+  return {
+    socket: socket,
+    emitUpdate,
+    subscribeToUpdates
+  };
+}; 
