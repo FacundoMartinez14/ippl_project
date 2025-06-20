@@ -10,7 +10,6 @@ import {
   VideoCameraIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import ContactCTA from '../components/home/ContactCTA';
 
 const ServicesPage = () => {
   const mainServices = [
@@ -169,8 +168,6 @@ const ServicesPage = () => {
           </div>
         </div>
       </section>
-
-      <ContactCTA />
     </div>
   );
 };

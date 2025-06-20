@@ -163,18 +163,6 @@ const HomePage = () => {
             </div>
           </div>
         </section>
-
-        {/* CTA Section */}
-        <section className="w-full bg-[#006C73] py-20" data-aos="fade-up">
-          <div className="max-w-3xl mx-auto text-center px-4">
-            <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Comienza tu camino hacia el bienestar</h2>
-            <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">Nuestro equipo de profesionales está listo para acompañarte en tu proceso terapéutico.</p>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <a href="/contacto" className="inline-block px-8 py-3 text-lg font-semibold rounded-full bg-white text-[#006C73] hover:bg-gray-200 transition-all shadow-lg transform hover:scale-105">Agenda tu consulta</a>
-              <a href="/profesionales" className="inline-block px-8 py-3 text-lg font-semibold rounded-full border-2 border-white text-white hover:bg-white hover:text-[#006C73] transition-all transform hover:scale-105">Conocer Profesionales</a>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );
