@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   UserGroupIcon, 
   BoltIcon, 
   HeartIcon, 
   ChatBubbleBottomCenterTextIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -17,21 +19,23 @@ const carouselImages = [
   '/images/carousel/1750306719893-596885016.png',
 ];
 
-function useCarousel(length, interval = 3500) {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setIndex(i => (i + 1) % length), interval);
-    return () => clearInterval(id);
-  }, [length, interval]);
-  return index;
-}
-
 const HomePage = () => {
   useEffect(() => {
     AOS.init({ duration: 900, once: true });
   }, []);
 
-  const current = useCarousel(carouselImages.length, 3500);
+  const [current, setCurrent] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+
+  const prev = () => setCurrent((c) => (c === 0 ? carouselImages.length - 1 : c - 1));
+  const next = useCallback(() => setCurrent((c) => (c === carouselImages.length - 1 ? 0 : c + 1)), []);
+
+  useEffect(() => {
+    if (!isHovering) {
+      const slideInterval = setInterval(next, 4000);
+      return () => clearInterval(slideInterval);
+    }
+  }, [isHovering, next]);
 
   const [aboutExpanded, setAboutExpanded] = useState(false);
 
@@ -39,21 +43,46 @@ const HomePage = () => {
     <div className="min-h-screen">
       <div className="space-y-24">
         {/* Hero Section */}
-        <section className="relative w-full flex justify-center items-center bg-white" style={{ minHeight: '340px' }}>
-          {/* Carrusel tipo banner animado */}
-          <div className="absolute inset-0 w-full h-full overflow-hidden rounded-b-3xl shadow-lg">
+        <section 
+          className="relative w-full flex justify-center items-center bg-white rounded-b-3xl shadow-lg" 
+          style={{ height: '450px' }}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          {/* Carrusel */}
+          <div className="absolute inset-0 w-full h-full overflow-hidden rounded-b-3xl">
             {carouselImages.map((img, i) => (
               <img
                 key={img}
                 src={img}
                 alt={`Carrusel ${i + 1}`}
-                className={`w-full h-full object-cover object-center transition-opacity duration-1000 absolute inset-0 ${i === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-                style={{ minHeight: '340px', maxHeight: '400px' }}
+                className={`w-full h-full object-cover object-center transition-all duration-1000 absolute inset-0 ${i === current ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+              />
+            ))}
+            {/* Overlay oscuro */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10"></div>
+          </div>
+          
+          {/* Botones de navegación */}
+          <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/50 rounded-full hover:bg-white transition-colors">
+            <ChevronLeftIcon className="h-6 w-6 text-gray-800"/>
+          </button>
+          <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/50 rounded-full hover:bg-white transition-colors">
+            <ChevronRightIcon className="h-6 w-6 text-gray-800"/>
+          </button>
+
+          {/* Indicadores de puntos */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex space-x-2">
+            {carouselImages.map((_, i) => (
+              <div
+                key={i}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${i === current ? 'bg-white scale-110' : 'bg-white/50'}`}
               />
             ))}
           </div>
+
           {/* Logo grande sobre el carrusel */}
-          <div className="relative z-20 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-8 mt-8">
+          <div className="relative z-20 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full bg-white/60 blur-xl z-0"></div>
             <img
               src="/images/logo 2.png"
