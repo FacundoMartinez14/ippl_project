@@ -41,58 +41,58 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="space-y-24">
+      <div className="space-y-12">
         {/* Hero Section */}
         <section 
-          className="relative w-full flex justify-center items-center bg-white rounded-b-3xl shadow-lg" 
-          style={{ height: '450px' }}
+          className="relative w-full max-w-5xl mx-auto flex flex-col justify-center items-center rounded-2xl shadow-2xl overflow-hidden mt-12"
+          style={{ height: '400px' }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
+          data-aos="fade-up"
         >
-          {/* Carrusel */}
-          <div className="absolute inset-0 w-full h-full overflow-hidden rounded-b-3xl">
+          {/* Carousel */}
+          <div className="absolute inset-0 w-full h-full">
             {carouselImages.map((img, i) => (
               <img
                 key={img}
                 src={img}
                 alt={`Carrusel ${i + 1}`}
-                className={`w-full h-full object-cover object-center transition-all duration-1000 absolute inset-0 ${i === current ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+                className={`w-full h-full object-cover object-center transition-all duration-700 absolute inset-0 ${i === current ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
               />
             ))}
-            {/* Overlay oscuro */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
           </div>
           
-          {/* Botones de navegación */}
-          <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/50 rounded-full hover:bg-white transition-colors">
-            <ChevronLeftIcon className="h-6 w-6 text-gray-800"/>
+          <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/60 rounded-full hover:bg-white transition-colors shadow-md">
+            <ChevronLeftIcon className="h-5 w-5 text-gray-800"/>
           </button>
-          <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/50 rounded-full hover:bg-white transition-colors">
-            <ChevronRightIcon className="h-6 w-6 text-gray-800"/>
+          <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/60 rounded-full hover:bg-white transition-colors shadow-md">
+            <ChevronRightIcon className="h-5 w-5 text-gray-800"/>
           </button>
 
-          {/* Indicadores de puntos */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex space-x-2">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex space-x-2">
             {carouselImages.map((_, i) => (
               <div
                 key={i}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${i === current ? 'bg-white scale-110' : 'bg-white/50'}`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 shadow-sm ${i === current ? 'bg-white' : 'bg-white/50'}`}
               />
             ))}
           </div>
 
-          {/* Logo grande sobre el carrusel */}
+          {/* Logo */}
           <div className="relative z-20 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full bg-white/60 blur-xl z-0"></div>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-white/50 blur-xl z-0"></div>
             <img
               src="/images/logo 2.png"
               alt="Logo IPPL"
-              className="w-[500px] max-w-full object-contain drop-shadow-2xl relative z-10"
+              className="w-[400px] max-w-full object-contain drop-shadow-lg relative z-10"
+              data-aos="zoom-in"
             />
           </div>
         </section>
+        
         {/* El resto del contenido va debajo del carrusel */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="flex flex-col gap-6 max-w-xl lg:max-w-2xl mx-auto lg:mx-0" data-aos="fade-right">
               <h2 className="text-2xl font-bold text-[#006C73] mb-2 font-sans">¿QUIENES SOMOS?</h2>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Menu, X, ChevronDown } from 'lucide-react';
@@ -13,6 +13,28 @@ const Header = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBlogOpen, setIsBlogOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      if (typeof window !== 'undefined') {
+        if (window.scrollY > lastScrollY && window.scrollY > 80) { // si se baja el scroll y se ha pasado la altura del header
+          setVisible(false);
+        } else { // si se sube el scroll
+          setVisible(true);
+        }
+        setLastScrollY(window.scrollY);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', controlNavbar);
+      return () => {
+        window.removeEventListener('scroll', controlNavbar);
+      };
+    }
+  }, [lastScrollY]);
 
   const navigationLinks = [
     { to: '/', text: 'Inicio' },
@@ -35,7 +57,7 @@ const Header = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <header className="bg-[#F9FAFB] shadow-sm fixed w-full top-0 z-50">
+    <header className={`bg-[#F9FAFB] shadow-sm fixed w-full z-50 transition-all duration-300 ${visible ? 'top-0' : '-top-24'}`}>
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <nav className="flex items-center justify-between h-20">
             {/* Logo */}
