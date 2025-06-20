@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   UserGroupIcon, 
@@ -12,23 +12,42 @@ import {
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Modal from '../components/Modal';
+import contentManagementService from '../services/content.service';
+import { useAuth } from '../context/AuthContext';
+import Logo from '../../public/Logo-removebg-preview.png';
 
-const carouselImages = [
-  '/images/carousel/1750306267929-286719260.jpg',
-  '/images/carousel/1750306702236-738466208.png',
-  '/images/carousel/1750306719893-596885016.png',
-];
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const HomePage = () => {
+  const { user } = useAuth();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [images, setImages] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
+    // Inicializar las animaciones al montar el componente
     AOS.init({ duration: 900, once: true });
+
+    const fetchImages = async () => {
+      try {
+        const imageFiles = await contentManagementService.getCarouselImages();
+        setImages(imageFiles.map(file => `${API_URL}/images/carousel/${file}`));
+      } catch (error) {
+        console.error("Error al cargar las imágenes del carrusel:", error);
+        setImages([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchImages();
   }, []);
 
-  const [current, setCurrent] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
 
-  const prev = () => setCurrent((c) => (c === 0 ? carouselImages.length - 1 : c - 1));
-  const next = useCallback(() => setCurrent((c) => (c === carouselImages.length - 1 ? 0 : c + 1)), []);
+  const prev = () => setCurrentIndex((c) => (c === 0 ? images.length - 1 : c - 1));
+  const next = useCallback(() => setCurrentIndex((c) => (c === images.length - 1 ? 0 : c + 1)), []);
 
   useEffect(() => {
     if (!isHovering) {
@@ -38,6 +57,22 @@ const HomePage = () => {
   }, [isHovering, next]);
 
   const [aboutExpanded, setAboutExpanded] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="relative w-full max-w-5xl mx-auto h-96 flex items-center justify-center bg-gray-200 rounded-lg">
+        <p>Cargando carrusel...</p>
+      </div>
+    );
+  }
+  
+  if (images.length === 0) {
+    return (
+      <div className="relative w-full max-w-5xl mx-auto h-96 flex items-center justify-center bg-gray-100 rounded-lg">
+        <p className="text-gray-500">No hay imágenes disponibles en este momento.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -52,12 +87,12 @@ const HomePage = () => {
         >
           {/* Carousel */}
           <div className="absolute inset-0 w-full h-full">
-            {carouselImages.map((img, i) => (
+            {images.map((img, i) => (
               <img
                 key={img}
                 src={img}
                 alt={`Carrusel ${i + 1}`}
-                className={`w-full h-full object-cover object-center transition-all duration-700 absolute inset-0 ${i === current ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+                className={`w-full h-full object-cover object-center transition-all duration-700 absolute inset-0 ${i === currentIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
               />
             ))}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
@@ -71,10 +106,10 @@ const HomePage = () => {
           </button>
 
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex space-x-2">
-            {carouselImages.map((_, i) => (
+            {images.map((_, i) => (
               <div
                 key={i}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 shadow-sm ${i === current ? 'bg-white' : 'bg-white/50'}`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 shadow-sm ${i === currentIndex ? 'bg-white' : 'bg-white/50'}`}
               />
             ))}
           </div>

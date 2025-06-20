@@ -8,8 +8,13 @@ const uploadRouter = require('./routes/upload');
 const postsRouter = require('./routes/posts');
 const professionalsRouter = require('./routes/professionals');
 const messageRouter = require('./routes/messageRoutes');
+const statsRoutes = require('./routes/stats');
+const contentRoutes = require('./routes/content');
 
 const app = express();
+
+// Servir archivos estáticos desde la carpeta 'public' en la raíz del proyecto
+app.use(express.static(path.join(__dirname, '../../public')));
 
 // Configuración de CORS
 app.use(cors({
@@ -69,6 +74,8 @@ app.use('/api/upload', uploadRouter);
 app.use('/api/posts', postsRouter);
 app.use('/api/professionals', professionalsRouter);
 app.use('/api', messageRouter);
+app.use('/api/stats', statsRoutes);
+app.use('/api/content', contentRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

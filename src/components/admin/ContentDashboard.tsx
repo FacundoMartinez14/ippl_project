@@ -21,6 +21,9 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import PostModal from './PostModal';
+import contentManagementService from '../../services/content.service';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const ContentDashboard = () => {
   const navigate = useNavigate();
@@ -37,9 +40,12 @@ const ContentDashboard = () => {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const [carouselImages, setCarouselImages] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     loadPosts();
+    fetchCarouselImages();
   }, []);
 
   const loadPosts = async () => {
@@ -153,6 +159,65 @@ const ContentDashboard = () => {
       setMessage("Error de red al subir la imagen.");
     }
     setUploading(false);
+  };
+
+  const fetchCarouselImages = async () => {
+    try {
+      const images = await contentManagementService.getCarouselImages();
+      setCarouselImages(images);
+    } catch (error) {
+      toast.error('No se pudieron cargar las imágenes del carrusel.');
+      console.error(error);
+    }
+  };
+  
+  const handleCarouselUpload = async () => {
+    const file = fileInputRef.current?.files[0];
+    if (!file) {
+      toast.error("Selecciona una imagen primero.");
+      return;
+    }
+    
+    setIsUploading(true);
+    toast.loading('Subiendo imagen...');
+    const formData = new FormData();
+    // El backend espera 'carouselImages' como un array
+    formData.append("carouselImages", file);
+
+    try {
+      // Usamos el servicio de posts que tiene la función de subida
+      await postsService.uploadCarouselImages(formData);
+      toast.dismiss();
+      toast.success('Imagen subida exitosamente.');
+      fetchCarouselImages(); // Refrescar la galería
+      if(fileInputRef.current) {
+        fileInputRef.current.value = null;
+      }
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Error al subir la imagen.");
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteCarouselImage = async (filename: string) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar la imagen "${filename}"?`)) {
+      return;
+    }
+    
+    toast.loading('Eliminando imagen...');
+    try {
+      await contentManagementService.deleteCarouselImage(filename);
+      toast.dismiss();
+      toast.success('Imagen eliminada.');
+      setCarouselImages(prev => prev.filter(img => img !== filename));
+    } catch (error) {
+      toast.dismiss();
+      toast.error('No se pudo eliminar la imagen.');
+      console.error(error);
+    }
   };
 
   if (isLoading) {
@@ -359,6 +424,63 @@ const ContentDashboard = () => {
         </div>
       </div>
 
+      {/* Gestor del Carrusel */}
+      <div className="bg-white p-6 rounded-2xl shadow-lg">
+        <h2 className="text-2xl font-semibold mb-5 text-gray-700">Gestión del Carrusel de Inicio</h2>
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+            {/* Columna de subida */}
+            <div className="flex flex-col gap-4">
+                <label htmlFor="carouselUpload" className="block text-sm font-medium text-gray-600">
+                    Subir nueva imagen
+                </label>
+                <input 
+                    type="file" 
+                    id="carouselUpload"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
+                />
+                <button
+                    onClick={handleCarouselUpload}
+                    disabled={isUploading}
+                    className="w-full md:w-auto self-start px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+                >
+                    {isUploading ? 'Subiendo...' : 'Subir Imagen'}
+                </button>
+            </div>
+            {/* Columna de galería */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-600 mb-4">Imágenes Actuales</h3>
+              {carouselImages.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {carouselImages.map(imageFile => (
+                    <div key={imageFile} className="relative group rounded-lg overflow-hidden shadow-md">
+                      <img 
+                        src={`${API_URL}/images/carousel/${imageFile}`} 
+                        alt={`Imagen del carrusel: ${imageFile}`}
+                        className="w-full h-24 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
+                        <button
+                          onClick={() => handleDeleteCarouselImage(imageFile)}
+                          className="p-2 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300"
+                          aria-label={`Eliminar imagen ${imageFile}`}
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 px-4 border-2 border-dashed rounded-lg">
+                  <p className="text-gray-500">No hay imágenes en el carrusel.</p>
+                </div>
+              )}
+            </div>
+        </div>
+      </div>
+
       {/* Delete Confirmation Modal */}
       {postToDelete && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
@@ -405,77 +527,6 @@ const ContentDashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Carousel Manager */}
-      <CarouselManager />
-    </div>
-  );
-};
-
-const CarouselManager = () => {
-  const fileInputRef = useRef(null);
-  const [preview, setPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    } else {
-      setPreview(null);
-    }
-  };
-
-  const handleUpload = async (e) => {
-    const file = fileInputRef.current?.files[0];
-    if (!file) {
-      setMessage("Selecciona una imagen primero.");
-      return;
-    }
-    setUploading(true);
-    setMessage("");
-    const formData = new FormData();
-    formData.append("image", file);
-    try {
-      const res = await fetch("/api/upload/carousel", {
-        method: "POST",
-        headers: {},
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessage("Imagen subida exitosamente.");
-        setPreview(null);
-        fileInputRef.current.value = null;
-      } else {
-        setMessage(data.message || "Error al subir la imagen.");
-      }
-    } catch (err) {
-      setMessage("Error de red al subir la imagen.");
-    }
-    setUploading(false);
-  };
-
-  return (
-    <div className="my-8 p-8 bg-white rounded-2xl shadow-xl w-full max-w-5xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-8 w-full">
-        <div className="flex-1 w-full">
-          <h2 className="text-xl font-bold mb-2 text-left">Gestión de Carrusel de Imágenes</h2>
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition" />
-          {preview && (
-            <img src={preview} alt="Previsualización" className="mt-4 rounded-xl shadow-md max-h-32 object-contain border border-gray-200" />
-          )}
-        </div>
-        <div className="flex-1 w-full flex flex-col items-end">
-          <label className="block text-xl font-bold mb-2 text-right">Selecciona una imagen</label>
-          <button onClick={handleUpload} disabled={uploading} className="px-8 py-3 bg-blue-600 text-white rounded-full font-semibold text-lg shadow hover:bg-blue-700 transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
-            {uploading ? "Subiendo..." : "Subir Imagen"}
-          </button>
-          {message && <p className="mt-2 text-sm text-gray-700 text-right">{message}</p>}
-        </div>
-      </div>
-      {/* Aquí se mostraría la lista de imágenes actuales del carrusel */}
     </div>
   );
 };
