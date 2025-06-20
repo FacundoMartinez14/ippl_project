@@ -5,6 +5,8 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { getImageUrl } from '../utils/imageUtils';
 import { useAuth } from '../context/AuthContext';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const BlogPage = () => {
   const { user } = useAuth();
@@ -16,6 +18,7 @@ const BlogPage = () => {
   const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
+    AOS.init({ duration: 900, once: true });
     loadPosts();
   }, []);
 
@@ -121,7 +124,7 @@ const BlogPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00796B]"></div>
       </div>
     );
   }
@@ -129,7 +132,7 @@ const BlogPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       {/* Header */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-16" data-aos="fade-up">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
           Blog IPPL
         </h1>
@@ -140,11 +143,13 @@ const BlogPage = () => {
 
       {/* Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map((post) => (
+        {posts.map((post, idx) => (
           <article
             key={post.id}
             onClick={() => handlePostClick(post)}
             className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+            data-aos="zoom-in-up"
+            data-aos-delay={idx * 100}
           >
             {post.thumbnail && (
               <img 
@@ -158,14 +163,14 @@ const BlogPage = () => {
                 {post.tags?.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#E0F2F1] text-[#00796B]"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600">
+              <h2 className="text-xl font-bold text-gray-900 mb-2 hover:text-[#00796B]">
                 {post.title}
               </h2>
 
@@ -187,8 +192,8 @@ const BlogPage = () => {
                     onClick={(e) => handleLike(post.id, e)}
                     className={`flex items-center transition-colors ${
                       likedPosts[post.id] 
-                        ? 'text-pink-600 hover:text-pink-700' 
-                        : 'text-gray-500 hover:text-pink-600'
+                        ? 'text-[#00796B] hover:text-[#006C73]' 
+                        : 'text-gray-500 hover:text-[#00796B]'
                     }`}
                   >
                     {likedPosts[post.id] ? (
@@ -199,7 +204,7 @@ const BlogPage = () => {
                     {post.likes || 0}
                   </button>
                 </div>
-                <span className="text-blue-600">
+                <span className="text-[#00796B]">
                   {post.readTime}
                 </span>
               </div>
@@ -235,7 +240,7 @@ const BlogPage = () => {
                 {selectedPost.tags?.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#E0F2F1] text-[#00796B]"
                   >
                     {tag}
                   </span>
@@ -260,8 +265,8 @@ const BlogPage = () => {
                     onClick={(e) => handleLike(selectedPost.id, e)}
                     className={`flex items-center transition-colors ${
                       likedPosts[selectedPost.id] 
-                        ? 'text-pink-600 hover:text-pink-700' 
-                        : 'text-gray-500 hover:text-pink-600'
+                        ? 'text-[#00796B] hover:text-[#006C73]' 
+                        : 'text-gray-500 hover:text-[#00796B]'
                     }`}
                   >
                     {likedPosts[selectedPost.id] ? (
@@ -272,7 +277,7 @@ const BlogPage = () => {
                     {selectedPost.likes || 0} likes
                   </button>
                 </div>
-                <span className="text-blue-600">
+                <span className="text-[#00796B]">
                   {selectedPost.readTime}
                 </span>
               </div>

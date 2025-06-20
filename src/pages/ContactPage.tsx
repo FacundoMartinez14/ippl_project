@@ -1,10 +1,16 @@
-import React, { FormEvent, useState } from 'react';
+import React, { FormEvent, useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import axios from 'axios';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const API_URL = 'http://localhost:5000/api';
 
 const ContactPage: React.FC = () => {
+  useEffect(() => {
+    AOS.init({ duration: 900, once: true });
+  }, []);
+
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -69,7 +75,7 @@ const ContactPage: React.FC = () => {
     <div className="min-h-screen bg-[#F9FAFB] py-16 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16" data-aos="fade-up">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#374151]">
             Contáctanos
           </h1>
@@ -80,15 +86,15 @@ const ContactPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Information */}
-          <div className="space-y-8">
+          <div className="space-y-8" data-aos="fade-right">
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Información de Contacto
               </h2>
               <div className="space-y-6">
                 <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <Phone className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-[#E0F2F1] rounded-xl">
+                    <Phone className="h-6 w-6 text-[#00796B]" />
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">Teléfono</h3>
@@ -98,8 +104,8 @@ const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <Mail className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-[#E0F2F1] rounded-xl">
+                    <Mail className="h-6 w-6 text-[#00796B]" />
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">Email</h3>
@@ -109,8 +115,8 @@ const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <MapPin className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-[#E0F2F1] rounded-xl">
+                    <MapPin className="h-6 w-6 text-[#00796B]" />
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">Dirección</h3>
@@ -120,8 +126,8 @@ const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <Clock className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-[#E0F2F1] rounded-xl">
+                    <Clock className="h-6 w-6 text-[#00796B]" />
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">Horario de Atención</h3>
@@ -150,7 +156,7 @@ const ContactPage: React.FC = () => {
           </div>
 
           {/* Contact Form */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg p-8" data-aos="fade-left">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Envíanos un Mensaje
             </h2>
@@ -167,7 +173,7 @@ const ContactPage: React.FC = () => {
                     required
                     value={formData.nombre}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00796B] focus:border-transparent"
                     placeholder="Tu nombre"
                   />
                 </div>
@@ -182,7 +188,7 @@ const ContactPage: React.FC = () => {
                     required
                     value={formData.apellido}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00796B] focus:border-transparent"
                     placeholder="Tu apellido"
                   />
                 </div>
@@ -199,7 +205,7 @@ const ContactPage: React.FC = () => {
                   required
                   value={formData.correoElectronico}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00796B] focus:border-transparent"
                   placeholder="tu@email.com"
                 />
               </div>
@@ -215,7 +221,7 @@ const ContactPage: React.FC = () => {
                   value={formData.mensaje}
                   onChange={handleChange}
                   rows={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00796B] focus:border-transparent resize-none"
                   placeholder="¿En qué podemos ayudarte?"
                 ></textarea>
               </div>
@@ -233,7 +239,7 @@ const ContactPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full px-6 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 ${
+                className={`w-full px-6 py-3 text-white bg-[#00796B] rounded-lg hover:bg-[#006C73] focus:outline-none focus:ring-2 focus:ring-[#00796B] focus:ring-offset-2 transition-colors duration-200 ${
                   isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
                 }`}
               >

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BeakerIcon,
@@ -10,8 +10,14 @@ import {
   VideoCameraIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const ServicesPage = () => {
+  useEffect(() => {
+    AOS.init({ duration: 900, once: true });
+  }, []);
+
   const mainServices = [
     {
       icon: UserIcon,
@@ -83,13 +89,13 @@ const ServicesPage = () => {
   return (
     <div className="space-y-24 py-16 bg-[#F9FAFB] min-h-screen">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#374151]">
             Nuestros Servicios
           </h1>
         </div>
-        <div className="mt-8 max-w-3xl mx-auto text-left font-sans text-base text-[#374151] leading-relaxed">
+        <div className="mt-8 max-w-3xl mx-auto text-left font-sans text-base text-[#374151] leading-relaxed" data-aos="fade-up" data-aos-delay="100">
           <p className="mb-4">
             En muchas ocasiones, quienes buscan iniciar una consulta psicológica no saben con certeza qué profesional es el más adecuado o qué orientación teórica se ajusta mejor a su motivo de consulta. Por ello, en nuestro instituto contamos con un equipo de profesionales formados en distintas corrientes teórico-clínicas y diferentes dispositivos de abordaje psicoterapéutico.
           </p>
@@ -100,10 +106,15 @@ const ServicesPage = () => {
       </section>
 
       {/* Main Services Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {mainServices.map((service) => (
-            <div key={service.title} className="bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+          {mainServices.map((service, idx) => (
+            <div 
+              key={service.title} 
+              className="bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+              data-aos="zoom-in-up"
+              data-aos-delay={idx * 100}
+            >
               <div className="p-8 flex flex-col items-center justify-center">
                 <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl mb-4">
                   <service.icon className="h-8 w-8 text-[#006C73]" />
@@ -118,7 +129,7 @@ const ServicesPage = () => {
       </section>
 
       {/* Specialized Services Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#374151]">
             Servicios Especializados
@@ -128,8 +139,13 @@ const ServicesPage = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {specializedServices.map((service) => (
-            <div key={service.title} className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow duration-300">
+          {specializedServices.map((service, idx) => (
+            <div 
+              key={service.title} 
+              className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow duration-300"
+              data-aos="zoom-in-up"
+              data-aos-delay={idx * 100}
+            >
               <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl">
                 <service.icon className="h-6 w-6 text-[#006C73]" />
               </div>
@@ -145,12 +161,17 @@ const ServicesPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
         <div className="bg-[#E5E7EB] rounded-3xl shadow-lg overflow-hidden">
           <div className="px-6 py-16 sm:p-16">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature) => (
-                <div key={feature.title} className="flex items-start">
+              {features.map((feature, idx) => (
+                <div 
+                  key={feature.title} 
+                  className="flex items-start"
+                  data-aos="fade-right"
+                  data-aos-delay={idx * 150}
+                >
                   <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl">
                     <feature.icon className="h-6 w-6 text-[#006C73]" />
                   </div>

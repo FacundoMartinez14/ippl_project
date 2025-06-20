@@ -64,7 +64,7 @@ const LoginPage = () => {
           <div className="mb-12">
             <Link to="/" className="flex items-center mb-6">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#00796B] rounded-full flex items-center justify-center">
                   <span className="text-white text-xl font-bold">IP</span>
                 </div>
                 <span className="text-xl font-bold text-gray-800">IPPL</span>
@@ -87,7 +87,7 @@ const LoginPage = () => {
                   type="email"
                   value={formData.username}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#00796B] focus:ring-1 focus:ring-[#00796B]"
                   placeholder="correo@ejemplo.com"
                   required
                 />
@@ -106,7 +106,7 @@ const LoginPage = () => {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#00796B] focus:ring-1 focus:ring-[#00796B]"
                   placeholder="Ingresa tu contraseña"
                   required
                 />
@@ -124,7 +124,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 ${
+              className={`w-full bg-[#00796B] text-white py-3 rounded-lg font-medium hover:bg-[#006C73] transition-colors duration-200 ${
                 isLoading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -136,8 +136,8 @@ const LoginPage = () => {
 
       {/* Lado derecho - Imagen de fondo */}
       <div className="hidden lg:block lg:w-1/2">
-        <div className="h-full w-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400">
-          <div className="h-full w-full bg-[url('/images/login-bg.jpg')] bg-cover bg-center mix-blend-overlay"></div>
+        <div className="h-full w-full bg-[#00796B]">
+          <div className="h-full w-full bg-[url('/images/login-bg.jpg')] bg-cover bg-center mix-blend-overlay opacity-50"></div>
         </div>
       </div>
     </div>

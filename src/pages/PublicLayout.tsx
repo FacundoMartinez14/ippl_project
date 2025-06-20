@@ -15,7 +15,7 @@ const PublicLayout: React.FC = () => {
       <main className="flex-grow pt-20">
         <Outlet />
       </main>
-      <ContactCTA />
+      {location.pathname !== '/contacto' && <ContactCTA />}
       <WhatsAppButton />
       {!noFooterPaths.includes(location.pathname) && <Footer />}
     </div>
