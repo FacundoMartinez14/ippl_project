@@ -10,6 +10,7 @@ import {
   VideoCameraIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import ContactCTA from '../components/home/ContactCTA';
 
 const ServicesPage = () => {
   const mainServices = [
@@ -169,15 +170,7 @@ const ServicesPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="w-full bg-[#00777e] py-20 ...">
-        <div className="max-w-xl mx-auto md:mx-0 text-center md:text-left">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Comienza tu camino hacia el bienestar</h2>
-          <p className="text-lg text-white mb-8">Nuestro equipo de profesionales está listo para acompañarte en tu proceso terapéutico.</p>
-          <a href="/contacto" className="inline-block px-8 py-4 text-lg font-semibold rounded-full bg-white text-[#00777e] border-2 border-[#00777e] hover:bg-[#80C0D0] hover:text-[#006C73] transition-all">Agenda tu consulta</a>
-          <a href="/profesionales" className="inline-block px-8 py-4 text-lg font-semibold rounded-full bg-transparent text-white border-2 border-white hover:bg-[#80C0D0] hover:text-[#006C73] ml-4 transition-all">Conocer Profesionales</a>
-        </div>
-      </section>
+      <ContactCTA />
     </div>
   );
 };

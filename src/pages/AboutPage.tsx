@@ -5,6 +5,7 @@ import {
   LightBulbIcon,
   HandRaisedIcon,
 } from '@heroicons/react/24/outline';
+import ContactCTA from '../components/home/ContactCTA';
 
 const AboutPage = () => {
   const values = [
@@ -100,6 +101,7 @@ const AboutPage = () => {
           ))}
         </div>
       </section>
+      <ContactCTA />
     </div>
   );
 };
