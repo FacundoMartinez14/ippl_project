@@ -89,7 +89,7 @@
       "slug": "prueba",
       "readTime": "1 min",
       "thumbnail": "/uploads/posts/1750220697528-296489413.png",
-      "views": 1,
+      "views": 2,
       "likes": 1,
       "comments": [],
       "createdAt": "2025-06-18T04:24:57.533Z",
@@ -99,8 +99,37 @@
         "1"
       ],
       "viewedBy": [
-        "1"
+        "1",
+        "2"
       ]
+    },
+    {
+      "id": "1750984695513",
+      "title": "aaa",
+      "content": "aa",
+      "excerpt": "aa",
+      "section": "adultos",
+      "status": "published",
+      "featured": "false",
+      "tags": [
+        "aaa"
+      ],
+      "seo": {
+        "metaTitle": "aaa",
+        "metaDescription": "aaa",
+        "keywords": "aaa"
+      },
+      "author": "2",
+      "authorName": "Gestor de Contenido",
+      "slug": "aaa",
+      "readTime": "1 min",
+      "thumbnail": "/uploads/posts/1750984695508-101920828.jpeg",
+      "views": 0,
+      "likes": 0,
+      "comments": [],
+      "createdAt": "2025-06-27T00:38:15.513Z",
+      "updatedAt": "2025-06-27T00:38:15.513Z",
+      "publishedAt": "2025-06-27T00:38:15.513Z"
     }
   ]
 }

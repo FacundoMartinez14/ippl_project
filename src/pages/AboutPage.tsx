@@ -99,8 +99,8 @@ const AboutPage = () => {
               data-aos="zoom-in-up"
               data-aos-delay={idx * 100}
             >
-              <div className="inline-flex items-center justify-center p-3 bg-blue-100 rounded-xl">
-                <value.icon className="h-6 w-6 text-blue-600" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#00B19F]/10 mb-4">
+                <value.icon className="h-6 w-6 text-[#00B19F]" />
               </div>
               <h3 className="mt-6 text-xl font-semibold text-gray-900">
                 {value.title}

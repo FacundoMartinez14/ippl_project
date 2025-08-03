@@ -30,7 +30,7 @@ const AdminLayout = () => {
     },
     {
       name: 'Gestión de Pacientes',
-      path: '/admin/patients',
+      path: '/admin/pacientes',
       icon: UserGroupIcon
     },
     {

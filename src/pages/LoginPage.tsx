@@ -26,6 +26,13 @@ const LoginPage = () => {
         password: formData.password
       });
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      // Verificar si el usuario está inactivo
+      if (currentUser.status === 'inactive') {
+        toast.error('Tu cuenta está inactiva. Por favor, contacta al administrador.');
+        return;
+      }
+      
       toast.success('¡Bienvenido!');
       
       // Redirigir según el rol
@@ -42,8 +49,12 @@ const LoginPage = () => {
         default:
           navigate('/');
       }
-    } catch (err) {
-      toast.error(error || 'Error al iniciar sesión');
+    } catch (err: any) {
+      if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error(error || 'Error al iniciar sesión');
+      }
     } finally {
       setIsLoading(false);
     }

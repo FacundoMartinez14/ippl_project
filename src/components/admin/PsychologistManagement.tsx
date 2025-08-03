@@ -145,7 +145,7 @@ const PsychologistManagement: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">{psych.name}</h3>
-                      <p className="text-blue-600 font-medium">{psych.specialty}</p>
+                      <p className="text-primary font-medium">{psych.specialty}</p>
                     </div>
                     
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -161,17 +161,17 @@ const PsychologistManagement: React.FC = () => {
                   </div>
                   
                   <div className="mt-4 grid grid-cols-2 gap-2">
-                    <div className="bg-blue-50 rounded-md p-3">
+                    <div className="bg-primary/10 rounded-md p-3">
                       <div className="flex items-center">
-                        <User size={16} className="text-blue-600 mr-2" />
+                        <User size={16} className="text-primary mr-2" />
                         <span className="text-sm font-medium">Pacientes</span>
                       </div>
                       <p className="text-lg font-semibold mt-1">{psych.patients}</p>
                     </div>
                     
-                    <div className="bg-teal-50 rounded-md p-3">
+                    <div className="bg-primary/10 rounded-md p-3">
                       <div className="flex items-center">
-                        <Calendar size={16} className="text-teal-600 mr-2" />
+                        <Calendar size={16} className="text-primary mr-2" />
                         <span className="text-sm font-medium">Consultas</span>
                       </div>
                       <p className="text-lg font-semibold mt-1">{psych.consultations}</p>

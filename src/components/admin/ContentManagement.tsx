@@ -19,6 +19,8 @@ const ContentManagement = () => {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [carouselImages, setCarouselImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     loadPosts();
@@ -96,21 +98,22 @@ const ContentManagement = () => {
     if (!files || files.length === 0) return;
 
     const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append('carouselImages', files[i]);
-    }
+    formData.append('image', files[0]);
 
     setIsUploading(true);
-    toast.loading('Subiendo imágenes...');
+    toast.loading('Subiendo imagen...');
 
     try {
-      await postsService.uploadCarouselImages(formData);
+      await contentManagementService.uploadCarouselImage(formData);
       toast.dismiss();
-      toast.success('Imágenes subidas correctamente!');
-      fetchCarouselImages(); // Recargar la lista de imágenes
+      toast.success('Imagen subida correctamente!');
+      fetchCarouselImages();
+      if (event.target) {
+        event.target.value = '';
+      }
     } catch (error) {
       toast.dismiss();
-      toast.error('Error al subir las imágenes.');
+      toast.error('Error al subir la imagen.');
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -118,20 +121,26 @@ const ContentManagement = () => {
   };
 
   const handleDeleteCarouselImage = async (filename: string) => {
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar la imagen "${filename}"?`)) {
-      return;
-    }
+    setImageToDelete(filename);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteImage = async () => {
+    if (!imageToDelete) return;
     
     toast.loading('Eliminando imagen...');
     try {
-      await contentManagementService.deleteCarouselImage(filename);
+      await contentManagementService.deleteCarouselImage(imageToDelete);
       toast.dismiss();
       toast.success('Imagen eliminada.');
-      setCarouselImages(prev => prev.filter(img => img !== filename));
+      setCarouselImages(prev => prev.filter(img => img !== imageToDelete));
     } catch (error) {
       toast.dismiss();
       toast.error('No se pudo eliminar la imagen.');
       console.error(error);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setImageToDelete(null);
     }
   };
 
@@ -159,18 +168,17 @@ const ContentManagement = () => {
         <h2 className="text-2xl font-semibold mb-5 text-gray-700">Gestión del Carrusel de Inicio</h2>
         <div className="mb-6">
           <label htmlFor="carouselUpload" className="block text-sm font-medium text-gray-600 mb-2">
-            Subir nuevas imágenes para el carrusel (se aceptan múltiples archivos)
+            Subir nuevas imágenes para el carrusel
           </label>
           <input 
             type="file" 
             id="carouselUpload"
-            multiple 
             accept="image/*"
             onChange={handleFileUpload}
             disabled={isUploading}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
           />
-          {isUploading && <p className="text-sm text-blue-500 mt-2">Subiendo imágenes, por favor espera...</p>}
+          {isUploading && <p className="text-sm text-blue-500 mt-2">Subiendo imagen, por favor espera...</p>}
         </div>
 
         <div>
@@ -204,6 +212,58 @@ const ContentManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {isDeleteModalOpen && (
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 bg-opacity-75"></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <TrashIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Eliminar imagen del carrusel
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        ¿Estás seguro de que quieres eliminar esta imagen? Esta acción no se puede deshacer.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={confirmDeleteImage}
+                >
+                  Eliminar
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setImageToDelete(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SECCIÓN: GESTIÓN DE POSTS */}
       <div className="bg-white p-6 rounded-2xl shadow-lg">

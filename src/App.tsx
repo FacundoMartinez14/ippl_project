@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 // Layouts
 import PublicLayout from './pages/PublicLayout';
 import AdminLayout from './pages/AdminLayout';
+import FinancialLayout from './pages/FinancialLayout';
 
 // Public pages
 import HomePage from './pages/HomePage';
@@ -20,6 +21,7 @@ import ActivityPage from './pages/ActivityPage';
 import BlogNinosPage from './pages/BlogNinosPage';
 import BlogAdultosPage from './pages/BlogAdultosPage';
 import BlogNoticiasPage from './pages/BlogNoticiasPage';
+import MedicalHistoryPage from './pages/MedicalHistoryPage';
 
 // Admin pages
 import Dashboard from './components/admin/Dashboard';
@@ -31,6 +33,20 @@ import AppointmentsCalendar from './components/admin/AppointmentsCalendar';
 import PostEditor from './components/admin/PostEditor';
 import AdminMessages from './pages/AdminMessages';
 import StatsPage from './pages/StatsPage';
+import ProfessionalPatients from './components/professional/ProfessionalPatients';
+import StatusRequestsManagement from './components/admin/StatusRequestsManagement';
+
+// Financial pages
+import FinancialDashboard from './components/admin/FinancialDashboard';
+import ReportsPage from './pages/admin/ReportsPage';
+import FinancialPagosPage from './pages/FinancialPagosPage';
+import FinancialSolicitudesPage from './pages/FinancialSolicitudesPage';
+
+// New pages
+import TodayAppointmentsPage from './pages/professional/TodayAppointmentsPage';
+import AllActivitiesPage from './pages/professional/AllActivitiesPage';
+import CompletedAppointmentsPage from './pages/professional/CompletedAppointmentsPage';
+import NotFoundReports from './pages/404';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -46,6 +62,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
+  }
+
+  if (user.status === 'inactive') {
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
@@ -83,13 +103,27 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="usuarios" element={<UserManagement />} />
             <Route path="contenido" element={<ContentDashboard />} />
-            <Route path="contenido/nuevo" element={<PostEditor />} />
-            <Route path="contenido/editar/:id" element={<PostEditor />} />
-            <Route path="patients" element={<PatientManagement />} />
+            <Route path="profesionales" element={<PsychologistDashboard />} />
+            <Route path="pacientes" element={<PatientManagement />} />
+            <Route path="medical-history/:patientId" element={<MedicalHistoryPage />} />
             <Route path="calendario" element={<AppointmentsCalendar />} />
             <Route path="mensajes" element={<AdminMessages />} />
-            <Route path="reportes" element={<StatsPage />} />
-            <Route path="activity" element={<ActivityPage />} />
+            <Route path="estadisticas" element={<StatsPage />} />
+            <Route path="solicitudes" element={<StatusRequestsManagement />} />
+            <Route path="actividad" element={<ActivityPage />} />
+          </Route>
+
+          {/* Financial routes */}
+          <Route path="/financial" element={
+            <ProtectedRoute allowedRoles={['financial']}>
+              <FinancialLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<FinancialDashboard />} />
+            <Route path="pagos" element={<FinancialPagosPage />} />
+            <Route path="reportes" element={<ReportsPage />} />
+            <Route path="solicitudes" element={<FinancialSolicitudesPage />} />
+            <Route path="facturas" element={<div className="p-6">Página de Facturas (En desarrollo)</div>} />
           </Route>
 
           {/* Content Manager routes */}
@@ -106,32 +140,47 @@ function App() {
           {/* Professional routes */}
           <Route path="/professional" element={
             <ProtectedRoute allowedRoles={['professional']}>
-              <AdminLayout />
+              <PsychologistDashboard />
             </ProtectedRoute>
-          }>
-            <Route index element={<PsychologistDashboard />} />
-            <Route path="patients" element={<PatientManagement />} />
-            <Route path="calendario" element={<AppointmentsCalendar />} />
-            <Route path="activity" element={<ActivityPage />} />
-          </Route>
-          
-          {/* Activity routes */}
-          <Route path="/activity" element={
-            <ProtectedRoute>
-              <ActivityPage />
+          } />
+          <Route path="/professional/pacientes" element={
+            <ProtectedRoute allowedRoles={['professional']}>
+              <ProfessionalPatients />
+            </ProtectedRoute>
+          } />
+          <Route path="/professional/pacientes/:patientId/medical-history" element={
+            <ProtectedRoute allowedRoles={['professional', 'admin']}>
+              <MedicalHistoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/professional/calendario" element={
+            <ProtectedRoute allowedRoles={['professional']}>
+              <AppointmentsCalendar />
+            </ProtectedRoute>
+          } />
+          <Route path="/professional/citas-hoy" element={
+            <ProtectedRoute allowedRoles={['professional']}>
+              <TodayAppointmentsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/professional/citas-finalizadas" element={
+            <ProtectedRoute allowedRoles={['professional']}>
+              <CompletedAppointmentsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/professional/actividades" element={
+            <ProtectedRoute allowedRoles={['professional']}>
+              <AllActivitiesPage />
             </ProtectedRoute>
           } />
           
           {/* Fallback routes */}
-          <Route path="/404" element={<NotFoundPage />} />
+          <Route path="/404" element={<NotFoundReports />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </Router>
     </AuthProvider>
   );
 }
-
-// Placeholder pages
-const NotFoundPage = () => <div className="py-20 text-center">Página no encontrada</div>;
 
 export default App;

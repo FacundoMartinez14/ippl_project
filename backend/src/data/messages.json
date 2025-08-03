@@ -1,76 +1,11 @@
-{
-  "messages": [
-    {
-      "id": "1749085463098",
-      "nombre": "Diego David",
-      "apellido": "Hernandez Zurita",
-      "correoElectronico": "hernandezzuritadiegodavid@gmail.com",
-      "mensaje": "....",
-      "fecha": "2025-06-05T01:04:23.098Z",
-      "leido": true
-    },
-    {
-      "id": "1749085802708",
-      "nombre": "Angel",
-      "apellido": "Vergara",
-      "correoElectronico": "angel01@gmail.com",
-      "mensaje": "gripa",
-      "fecha": "2025-06-05T01:10:02.708Z",
-      "leido": true
-    },
-    {
-      "id": "1749094061308",
-      "nombre": "Angel",
-      "apellido": "Vergara",
-      "correoElectronico": "angel01@gmail.com",
-      "mensaje": "Hola",
-      "fecha": "2025-06-05T03:27:41.308Z",
-      "leido": true
-    },
-    {
-      "id": "1749156905175",
-      "nombre": "Cristian",
-      "apellido": "Bula",
-      "correoElectronico": "cristianbula04@gmail.com",
-      "mensaje": "Quiero más información ",
-      "fecha": "2025-06-05T20:55:05.175Z",
-      "leido": true
-    },
-    {
-      "id": "1749157049693",
-      "nombre": "Angel",
-      "apellido": "Vergara",
-      "correoElectronico": "angel01@gmail.com",
-      "mensaje": "más información ",
-      "fecha": "2025-06-05T20:57:29.693Z",
-      "leido": true
-    },
-    {
-      "_id": "1749175270355",
-      "nombre": "Diego ",
-      "apellido": " Zurita",
-      "correoElectronico": "hernandezzuritadiegodavid@gmail.com",
-      "mensaje": "...............",
-      "fecha": "2025-06-06T02:01:10.355Z",
-      "leido": true
-    },
-    {
-      "_id": "1749321244317",
-      "nombre": "Angell Yuliana",
-      "apellido": "Ladino Osorio",
-      "correoElectronico": "yuliana@gmail.com",
-      "mensaje": "Gripa",
-      "fecha": "2025-06-07T18:34:04.317Z",
-      "leido": true
-    },
-    {
-      "_id": "1749592856616",
-      "nombre": "Jeronimo",
-      "apellido": "henao",
-      "correoElectronico": "jeronimoH@gmail.com",
-      "mensaje": "Cita con doctor\n",
-      "fecha": "2025-06-10T22:00:56.616Z",
-      "leido": true
-    }
-  ]
-}
+[
+  {
+    "_id": "1751731429836",
+    "nombre": "Luis",
+    "apellido": "Fernando Villa",
+    "correoElectronico": "villa@gmail.com",
+    "mensaje": "prueba de contacto",
+    "fecha": "2025-07-05T16:03:49.836Z",
+    "leido": false
+  }
+]

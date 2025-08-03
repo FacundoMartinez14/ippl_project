@@ -31,4 +31,16 @@ router.put('/messages/:id/read', authenticateToken, async (req, res) => {
     }
 });
 
+// Ruta para limpiar todos los mensajes
+router.delete('/messages/clear-all', authenticateToken, async (req, res) => {
+    try {
+        // Sobrescribir el archivo con un array vacío
+        await fs.writeFile(messagesFilePath, JSON.stringify({ messages: [] }, null, 2));
+        res.json({ success: true, message: 'Todos los mensajes han sido eliminados' });
+    } catch (error) {
+        console.error('Error al limpiar mensajes:', error);
+        res.status(500).json({ error: 'Error al eliminar los mensajes' });
+    }
+});
+
 module.exports = router; 

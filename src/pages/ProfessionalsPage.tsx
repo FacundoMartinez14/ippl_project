@@ -78,25 +78,25 @@ const ProfessionalsPage = () => {
 
                 <div className="space-y-4">
                   <div className="flex items-center">
-                    <AcademicCapIcon className="h-6 w-6 text-[#00796B]" />
+                    <AcademicCapIcon className="h-6 w-6 text-primary" />
                     <span className="ml-2 text-gray-600">{professional.education}</span>
                   </div>
 
                   <div className="flex items-center">
-                    <BriefcaseIcon className="h-6 w-6 text-[#00796B]" />
+                    <BriefcaseIcon className="h-6 w-6 text-primary" />
                     <span className="ml-2 text-gray-600">{professional.experience}</span>
                   </div>
 
                   <div>
                     <div className="flex items-center mb-2">
-                      <StarIcon className="h-6 w-6 text-[#00796B]" />
+                      <StarIcon className="h-6 w-6 text-primary" />
                       <span className="ml-2 text-gray-700 font-medium">Especialidades:</span>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {professional.specialties.map((specialty, index) => (
                         <span
                           key={index}
-                          className="px-3 py-1 bg-[#E0F2F1] text-[#00796B] rounded-full text-sm"
+                          className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
                         >
                           {specialty}
                         </span>
@@ -105,7 +105,7 @@ const ProfessionalsPage = () => {
                   </div>
                 </div>
 
-                <button className="mt-6 w-full bg-[#00796B] text-white py-2 px-4 rounded-lg hover:bg-[#006C73] transition-colors duration-200">
+                <button className="mt-6 w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/80 transition-colors duration-200">
                   Agendar Cita
                 </button>
               </div>

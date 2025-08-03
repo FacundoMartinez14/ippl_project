@@ -197,8 +197,8 @@ const UserManagement: React.FC = () => {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User size={18} className="text-blue-600" />
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User size={18} className="text-primary" />
                           </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{user.name}</div>
@@ -207,13 +207,13 @@ const UserManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeClass(user.role)}`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary/10 text-primary`}>
                         {getRoleLabel(user.role)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        user.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
                       }`}>
                         {user.status === 'active' ? 'Activo' : 'Inactivo'}
                       </span>

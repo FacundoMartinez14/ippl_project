@@ -1,20 +1,6 @@
 import api from '../config/api';
-import { AxiosResponse } from 'axios';
+import { Appointment } from '../types/Appointment';
 import activityService from './activity.service';
-
-export interface Appointment {
-  id: string;
-  patientId: string;
-  professionalId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  notes?: string;
-  type: 'regular' | 'first_time' | 'emergency';
-  patientName: string;
-  professionalName: string;
-}
 
 export interface CreateAppointmentDTO {
   patientId: string;
@@ -25,30 +11,51 @@ export interface CreateAppointmentDTO {
   type: 'regular' | 'first_time' | 'emergency';
   notes?: string;
   audioNote?: string;
+  sessionCost?: number;
 }
 
-const appointmentsService = {
-  getAllAppointments: async (): Promise<Appointment[]> => {
-    const response = await api.get<{ appointments: Appointment[] }>('/appointments');
-    return response.data.appointments;
-  },
+class AppointmentsService {
+  async getAllAppointments(): Promise<Appointment[]> {
+    try {
+      const response = await api.get('/appointments');
+      return response.data.appointments || [];
+    } catch (error) {
+      console.error('Error fetching all appointments:', error);
+      return [];
+    }
+  }
 
-  getUpcomingAppointments: async (): Promise<Appointment[]> => {
-    const response = await api.get<{ appointments: Appointment[] }>('/appointments/upcoming');
-    return response.data.appointments;
-  },
+  async getUpcomingAppointments(): Promise<Appointment[]> {
+    try {
+      const response = await api.get('/appointments/upcoming');
+      return response.data.appointments || [];
+    } catch (error) {
+      console.error('Error fetching upcoming appointments:', error);
+      return [];
+    }
+  }
 
-  getProfessionalAppointments: async (professionalId: string): Promise<Appointment[]> => {
-    const response = await api.get<{ appointments: Appointment[] }>(`/appointments/professional/${professionalId}`);
-    return response.data.appointments;
-  },
+  async getProfessionalAppointments(professionalId: string): Promise<Appointment[]> {
+    try {
+      const response = await api.get(`/appointments/professional/${professionalId}`);
+      return response.data.appointments || [];
+    } catch (error) {
+      console.error('Error fetching professional appointments:', error);
+      return [];
+    }
+  }
 
-  getPatientAppointments: async (patientId: string): Promise<Appointment[]> => {
-    const response = await api.get<{ appointments: Appointment[] }>(`/appointments/patient/${patientId}`);
-    return response.data.appointments;
-  },
+  async getPatientAppointments(patientId: string): Promise<Appointment[]> {
+    try {
+      const response = await api.get(`/appointments/patient/${patientId}`);
+      return response.data.appointments || [];
+    } catch (error) {
+      console.error('Error fetching patient appointments:', error);
+      return [];
+    }
+  }
 
-  createAppointment: async (appointmentData: any): Promise<any> => {
+  async createAppointment(appointmentData: Partial<Appointment>): Promise<Appointment> {
     try {
       const response = await api.post('/appointments', appointmentData);
       // Registrar la actividad
@@ -59,28 +66,67 @@ const appointmentsService = {
       });
       return response.data;
     } catch (error) {
-      console.error('Error al crear cita:', error);
+      console.error('Error creating appointment:', error);
       throw error;
     }
-  },
+  }
 
-  updateAppointment: async (id: string, appointment: Partial<Appointment>): Promise<Appointment> => {
-    const response = await api.put<Appointment>(`/appointments/${id}`, appointment);
-    return response.data;
-  },
+  async updateAppointment(appointmentId: string, appointmentData: Partial<Appointment>): Promise<Appointment> {
+    try {
+      const response = await api.put(`/appointments/${appointmentId}`, appointmentData);
+      // Registrar la actividad
+      const statusText = appointmentData.status === 'completed' ? 'completada' : 'actualizada';
+      await activityService.logActivity({
+        type: 'appointment_update',
+        description: `Cita ${statusText} con ${appointmentData.patientName}`,
+        actor: appointmentData.professionalName || 'Sistema'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      throw error;
+    }
+  }
 
-  deleteAppointment: async (id: string): Promise<void> => {
-    await api.delete(`/appointments/${id}`);
-  },
+  async deleteAppointment(appointmentId: string, appointmentData?: Partial<Appointment>): Promise<void> {
+    try {
+      // Primero obtenemos los detalles de la cita si no se proporcionaron
+      let appointment = appointmentData;
+      if (!appointment) {
+        const response = await api.get(`/appointments/${appointmentId}`);
+        appointment = response.data;
+      }
 
-  getAvailableSlots: async (professionalId: string, date: string): Promise<string[]> => {
-    const response = await api.get<{ slots: string[] }>(`/appointments/slots/${professionalId}`, {
-      params: { date }
-    });
-    return response.data.slots;
-  },
+      // Eliminamos la cita
+      await api.delete(`/appointments/${appointmentId}`);
 
-  updateAppointmentStatus: async (id: string, status: string, appointmentData: any): Promise<any> => {
+      // Registrar la actividad
+      if (appointment) {
+        await activityService.logActivity({
+          type: 'appointment_delete',
+          description: `Cita eliminada con ${appointment.patientName}`,
+          actor: appointment.professionalName || 'Sistema'
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      throw new Error('No se pudo eliminar la cita. Por favor, inténtalo de nuevo.');
+    }
+  }
+
+  async getAvailableSlots(professionalId: string, date: string): Promise<string[]> {
+    try {
+      const response = await api.get(`/appointments/slots/${professionalId}`, {
+        params: { date }
+      });
+      return response.data.slots || [];
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      return [];
+    }
+  }
+
+  async updateAppointmentStatus(id: string, status: string, appointmentData: any): Promise<any> {
     try {
       const response = await api.put(`/appointments/${id}/status`, { status });
       // Registrar la actividad
@@ -96,6 +142,7 @@ const appointmentsService = {
       throw error;
     }
   }
-};
+}
 
+const appointmentsService = new AppointmentsService();
 export default appointmentsService; 

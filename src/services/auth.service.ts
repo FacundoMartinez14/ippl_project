@@ -10,6 +10,7 @@ export interface User {
   username: string;
   role: string;
   name: string;
+  status?: string; // Permitir status opcional para compatibilidad
 }
 
 export interface AuthResponse {

@@ -1,63 +1,67 @@
-import api from './api';
-import { AxiosResponse } from 'axios';
+import api from '../config/api';
+import { Activity } from '../types/Activity';
 
-export interface Activity {
-  id: string;
-  type: 'new_patient' | 'new_post' | 'new_appointment' | 'appointment_update' | 'post_update' | 'patient_update';
+interface ActivityLog {
+  type: string;
   description: string;
-  timestamp: string;
-  user: string;
-  actor?: string;
+  actor: string;
 }
 
 const activityService = {
-  getRecentActivities: async (limit: number = 10): Promise<Activity[]> => {
+  // Obtener todas las actividades
+  async getActivities(): Promise<Activity[]> {
     try {
-      const response: AxiosResponse<Activity[]> = await api.get(`/activities?limit=${limit}`);
-      return response.data.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
+      const response = await api.get('/activities');
+      return response.data;
     } catch (error) {
-      console.error('Error al obtener actividades recientes:', error);
+      console.error('Error fetching activities:', error);
       return [];
     }
   },
 
-  // Esta función se puede llamar desde cualquier parte de la aplicación para registrar una nueva actividad
-  logActivity: async (activity: Omit<Activity, 'id' | 'timestamp'>): Promise<Activity | null> => {
+  // Marcar una actividad como leída
+  async markAsRead(activityId: string): Promise<void> {
     try {
-      const response: AxiosResponse<Activity> = await api.post('/activities', {
-        ...activity,
-        timestamp: new Date().toISOString()
-      });
-      return response.data;
+      await api.put(`/activities/${activityId}/read`);
     } catch (error) {
-      console.error('Error al registrar actividad:', error);
-      return null;
+      console.error('Error marking activity as read:', error);
     }
   },
 
-  // Función auxiliar para formatear la fecha relativa
-  getRelativeTime: (timestamp: string): string => {
-    const now = new Date();
-    const date = new Date(timestamp);
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return 'hace un momento';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
-    } else {
-      return date.toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+  // Marcar todas las actividades como leídas
+  async markAllAsRead(): Promise<void> {
+    try {
+      await api.put('/activities/read-all');
+    } catch (error) {
+      console.error('Error marking all activities as read:', error);
+    }
+  },
+
+  // Obtener el conteo de actividades no leídas
+  async getUnreadCount(): Promise<number> {
+    try {
+      const response = await api.get('/activities/unread-count');
+      return response.data.count || 0;
+    } catch (error) {
+      console.error('Error getting unread count:', error);
+      return 0;
+    }
+  },
+
+  // Limpiar todas las actividades
+  async clearAllActivities(): Promise<void> {
+    try {
+      await api.delete('/activities/clear-all');
+    } catch (error) {
+      console.error('Error clearing activities:', error);
+    }
+  },
+
+  async logActivity(activity: ActivityLog): Promise<void> {
+    try {
+      await api.post('/activities', activity);
+    } catch (error) {
+      console.error('Error logging activity:', error);
     }
   }
 };

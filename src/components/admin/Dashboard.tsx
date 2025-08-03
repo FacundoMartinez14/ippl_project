@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import statsService, { SystemStats, ProfessionalStats } from '../../services/stats.service';
 import postsService, { Post } from '../../services/posts.service';
+import activityService from '../../services/activity.service';
+import { Activity } from '../../types/Activity';
 import { 
   UserGroupIcon, 
   DocumentTextIcon, 
@@ -64,6 +66,9 @@ interface Message {
 
 const API_URL = 'http://localhost:5000/api';
 
+const MAX_MESSAGES = 2; // Número máximo de mensajes a mostrar
+const MAX_ACTIVITIES = 3; // Número máximo de actividades a mostrar
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -74,16 +79,21 @@ const Dashboard = () => {
   const [recentMessages, setRecentMessages] = useState<Message[]>([]);
   const [messageError, setMessageError] = useState<string | null>(null);
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   useEffect(() => {
     loadStats();
     loadRecentMessages();
     loadRecentPosts();
+    loadActivities();
   }, [user]);
 
   const loadStats = async () => {
     try {
       setIsLoading(true);
+      setStatsError(null);
       if (user?.role === 'admin') {
         const stats = await statsService.getSystemStats();
         setSystemStats(stats);
@@ -92,7 +102,17 @@ const Dashboard = () => {
         setProfessionalStats(stats);
       }
     } catch (error) {
-      toast.error('Error al cargar las estadísticas');
+      console.error('Error al cargar estadísticas:', error);
+      setStatsError('Error al cargar las estadísticas del sistema');
+      // Establecer valores por defecto para evitar que la UI se rompa
+      if (user?.role === 'admin') {
+        setSystemStats({
+          users: { total: 0, active: 0, byRole: { admin: 0, professional: 0, content_manager: 0 } },
+          patients: { total: 0, active: 0, withAppointments: 0, byProfessional: {} },
+          posts: { total: 0, published: 0, drafts: 0, comments: 0, totalViews: 0, totalLikes: 0, bySection: {} },
+          appointments: { upcoming: 0, completed: 0 }
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -102,8 +122,11 @@ const Dashboard = () => {
     try {
       setMessageError(null);
       const response = await axios.get(`${API_URL}/messages`);
-      // Messages are already sorted by date on the backend, just take the first 3
-      setRecentMessages(response.data.slice(0, 3));
+      // Ordenar mensajes por fecha y tomar solo los más recientes
+      const sortedMessages = response.data
+        .sort((a: any, b: any) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+        .slice(0, MAX_MESSAGES);
+      setRecentMessages(sortedMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
       if (axios.isAxiosError(error) && error.code === 'ERR_NETWORK') {
@@ -125,6 +148,22 @@ const Dashboard = () => {
       setRecentPosts(sortedPosts);
     } catch (error) {
       console.error('Error al cargar posts recientes:', error);
+    }
+  };
+
+  const loadActivities = async () => {
+    try {
+      setActivityError(null);
+      const data = await activityService.getActivities();
+      // Filtrar solo las actividades de tipo PATIENT_DISCHARGE_REQUEST y tomar las más recientes
+      const filteredActivities = data
+        .filter(activity => activity.type === 'PATIENT_DISCHARGE_REQUEST')
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, MAX_ACTIVITIES);
+      setActivities(filteredActivities);
+    } catch (error) {
+      console.error('Error loading activities:', error);
+      setActivityError('Error al cargar las actividades');
     }
   };
 
@@ -165,6 +204,18 @@ const Dashboard = () => {
             Actualizar datos
           </button>
         </div>
+
+        {statsError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{statsError}</p>
+            <button
+              onClick={loadStats}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+            >
+              Reintentar carga
+            </button>
+          </div>
+        )}
 
         {user?.role === 'admin' && systemStats && (
           <>
@@ -207,13 +258,13 @@ const Dashboard = () => {
                   onClick={stat.onClick}
                 >
                   <div className="flex items-center">
-                    <div className={`bg-[#006C73]/10 p-3 rounded-lg`}>
-                      <stat.icon className={`h-6 w-6 text-[#006C73]`} />
+                    <div className="bg-primary/10 p-3 rounded-lg">
+                      <stat.icon className="h-6 w-6 text-primary" />
                     </div>
                     <div className="ml-4">
                       <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
                       <p className="text-sm text-gray-600">{stat.title}</p>
-                      <p className={`text-xs text-[#006C73] mt-1`}>{stat.detail}</p>
+                      <p className="text-xs text-primary mt-1">{stat.detail}</p>
                     </div>
                   </div>
                 </div>
@@ -249,7 +300,7 @@ const Dashboard = () => {
                   title: "Gestión de Pacientes",
                   icon: ClipboardDocumentListIcon,
                   color: "green",
-                  route: "/admin/patients",
+                  route: "/admin/pacientes",
                   stats: [
                     { label: "Pacientes con Citas", value: systemStats.patients.withAppointments },
                     { label: "Profesionales Asignados", value: Object.keys(systemStats.patients.byProfessional).length },
@@ -263,8 +314,8 @@ const Dashboard = () => {
                   className="bg-[#F9FAFB] rounded-xl shadow-md p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-[#E5E7EB]"
                 >
                   <div className="flex items-center mb-4">
-                    <div className={`bg-[#006C73]/10 p-3 rounded-xl`}>
-                      <section.icon className={`h-6 w-6 text-[#006C73]`} />
+                    <div className="bg-primary/10 p-3 rounded-xl">
+                      <section.icon className="h-6 w-6 text-primary" />
                     </div>
                     <h3 className="ml-4 text-lg font-semibold text-gray-900">
                       {section.title}
@@ -313,7 +364,7 @@ const Dashboard = () => {
                   title: "Actividad",
                   description: "Registro de acciones",
                   icon: ChartBarIcon,
-                  route: '/admin/activity'
+                  route: '/admin/actividad'
                 }
               ].map((card, index) => (
                 <QuickAccessCard
@@ -326,60 +377,63 @@ const Dashboard = () => {
               ))}
             </div>
 
-            {/* Actividad Reciente y Mensajes */}
+            {/* Actividad Reciente y Últimos Mensajes */}
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Actividad Reciente */}
+              {/* Solicitudes de Baja de Pacientes */}
               <div className="bg-[#F9FAFB] rounded-xl shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Actividad Reciente
-                  </h3>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Notificaciones del sistema</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Mostrando las {MAX_ACTIVITIES} solicitudes más recientes
+                    </p>
+                  </div>
                   <button
-                    onClick={() => navigate('/admin/activity')}
+                    onClick={() => navigate('/admin/actividad')}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                   >
                     Ver todo
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {recentPosts.map((post) => (
-                    <ActivityItem
-                      key={post.id}
-                      color="bg-purple-500"
-                      text={`Nueva publicación: ${post.title}`}
-                      time={formatTimeAgo(new Date(post.publishedAt || post.createdAt))}
-                    />
-                  ))}
-                  {[
-                    {
-                      id: 'activity-1',
-                      color: "bg-green-500",
-                      text: "Nuevo paciente registrado: María González",
-                      time: "Hace 2 horas"
-                    },
-                    {
-                      id: 'activity-2',
-                      color: "bg-blue-500",
-                      text: "Cita completada con Juan Pérez",
-                      time: "Hace 3 horas"
-                    }
-                  ].map((activity) => (
-                    <ActivityItem
-                      key={activity.id}
-                      color={activity.color}
-                      text={activity.text}
-                      time={activity.time}
-                    />
-                  ))}
+                  {activityError ? (
+                    <div className="text-center py-4">
+                      <p className="text-red-600">{activityError}</p>
+                      <button
+                        onClick={loadActivities}
+                        className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        Reintentar
+                      </button>
+                    </div>
+                  ) : activities.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">No hay notificaciones pendientes</p>
+                    </div>
+                  ) : (
+                    activities.map((activity) => (
+                      <ActivityItem
+                        key={activity._id}
+                        color="bg-red-500"
+                        text={activity.description}
+                        time={formatTimeAgo(new Date(activity.date))}
+                      />
+                    ))
+                  )}
                 </div>
               </div>
 
               {/* Últimos Mensajes */}
               <div className="bg-[#F9FAFB] rounded-xl shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Últimos Mensajes
-                  </h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Últimos Mensajes
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Mostrando los {MAX_MESSAGES} mensajes más recientes
+                    </p>
+                  </div>
                   <button
                     onClick={() => navigate('/admin/mensajes')}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -437,8 +491,8 @@ const QuickAccessCard: React.FC<QuickAccessCardProps> = ({ title, description, i
     className="bg-[#F9FAFB] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-200 cursor-pointer border border-[#E5E7EB]"
   >
     <div className="flex items-center">
-      <div className="bg-[#006C73]/10 p-3 rounded-xl">
-        <Icon className="h-6 w-6 text-[#006C73]" />
+      <div className="bg-primary/10 p-3 rounded-xl">
+        <Icon className="h-6 w-6 text-primary" />
       </div>
       <div className="ml-4">
         <h3 className="text-sm font-medium text-gray-900">{title}</h3>

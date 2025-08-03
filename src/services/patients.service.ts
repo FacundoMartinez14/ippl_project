@@ -1,11 +1,13 @@
 import api from './api';
 import { AxiosResponse } from 'axios';
 import activityService from './activity.service';
+import { API_URL } from '../config/config';
+import frequencyRequestService, { CreateFrequencyRequestDTO } from './frequencyRequest.service';
 
 export interface Patient {
   id: string;
   name: string;
-  status: 'active' | 'pending';
+  status: 'active' | 'pending' | 'inactive' | 'absent';
   professionalId?: string;
   professionalName?: string;
   audioNote?: string;
@@ -15,9 +17,8 @@ export interface Patient {
   assignedAt?: string;
   email?: string;
   phone?: string;
-  nextAppointment?: string;
-  sessionCost?: number;
-  commission?: number;
+  sessionFrequency?: 'weekly' | 'biweekly' | 'monthly';
+  statusChangeReason?: string;
 }
 
 export interface CreatePatientDTO {
@@ -29,24 +30,31 @@ export interface AssignPatientDTO {
   patientId: string;
   professionalId: string;
   professionalName: string;
-  status?: 'active' | 'pending';
+  status?: 'active' | 'pending' | 'inactive' | 'absent';
   assignedAt?: string;
-  nextAppointment?: string;
   textNote?: string;
   audioNote?: string;
-  sessionCost: number;
-  commission: number;
+  sessionFrequency: 'weekly' | 'biweekly' | 'monthly';
+  statusChangeReason?: string;
 }
 
 const patientsService = {
   getAllPatients: async (): Promise<Patient[]> => {
     const response = await api.get('/patients');
-    return response.data.patients || [];
+    const patients = response.data.patients || [];
+    return patients.map((patient: Patient) => ({
+      ...patient,
+      audioNote: patient.audioNote ? `${API_URL}${patient.audioNote}` : undefined
+    }));
   },
 
   getProfessionalPatients: async (professionalId: string): Promise<Patient[]> => {
     const response = await api.get(`/patients/professional/${professionalId}`);
-    return response.data.patients || [];
+    const patients = response.data.patients || [];
+    return patients.map((patient: Patient) => ({
+      ...patient,
+      audioNote: patient.audioNote ? `${API_URL}${patient.audioNote}` : undefined
+    }));
   },
 
   addPatient: async (patient: CreatePatientDTO): Promise<Patient> => {
@@ -119,7 +127,7 @@ const patientsService = {
 
   updatePatient: async (id: string, patientData: any): Promise<any> => {
     try {
-      const response = await api.put(`/patients/${id}`, patientData);
+      const response = await api.put(`/patients/${id}/assign`, patientData);
       // Registrar la actividad
       await activityService.logActivity({
         type: 'patient_update',
@@ -144,6 +152,20 @@ const patientsService = {
       });
     } catch (error) {
       console.error('Error al eliminar paciente:', error);
+      throw error;
+    }
+  },
+
+  requestFrequencyChange: async (patientId: string, newFrequency: 'weekly' | 'biweekly' | 'monthly', reason: string): Promise<any> => {
+    try {
+      const requestData: CreateFrequencyRequestDTO = {
+        patientId,
+        newFrequency,
+        reason
+      };
+      return await frequencyRequestService.createRequest(requestData);
+    } catch (error) {
+      console.error('Error al solicitar cambio de frecuencia:', error);
       throw error;
     }
   }

@@ -47,11 +47,11 @@ const Sidebar: React.FC = () => {
     {
       name: 'Actividad',
       href: user?.role === 'admin'
-        ? '/admin/activity'
-        : '/professional/activity',
+        ? '/admin/actividad'
+        : '/professional/actividad',
       icon: ChartBarIcon,
-      current: pathname.endsWith('/activity'),
-      roles: ['admin', 'professional', 'content_manager']
+      current: pathname.endsWith('/actividad'),
+      roles: ['admin', 'professional']
     },
     {
       name: 'Mensajes',

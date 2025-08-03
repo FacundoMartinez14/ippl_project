@@ -50,6 +50,7 @@ const Header = () => {
       case 'admin': return '/admin';
       case 'content_manager': return '/content';
       case 'professional': return '/professional';
+      case 'financial': return '/financial';
       default: return '/';
     }
   };

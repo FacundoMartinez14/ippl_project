@@ -12,8 +12,8 @@ const ServiceCard: React.FC<ServiceProps> = ({ title, description, icon }) => {
   return (
     <Card className="h-full transition-transform hover:-translate-y-1 duration-200">
       <div className="flex flex-col items-center text-center p-2">
-        <div className="bg-blue-100 p-3 rounded-full mb-4 text-blue-600">
-          {icon}
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+          {React.cloneElement(icon as React.ReactElement, { className: 'h-6 w-6 text-primary' })}
         </div>
         <h3 className="text-lg font-semibold mb-2 text-gray-800">{title}</h3>
         <p className="text-gray-600">{description}</p>

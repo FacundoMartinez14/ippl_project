@@ -1,56 +1,79 @@
 {
   "patients": [
     {
-      "id": "1749624132938",
-      "name": "Paciente ejemplo",
-      "description": "Ejemplo",
-      "createdAt": "2025-06-11T06:42:12.938Z",
+      "id": "1750709885522",
+      "name": "Luis Fernando Villa",
+      "description": "El Lorem Ipsum fue concebido como un texto de relleno, formateado de una cierta manera para permitir la presentación de elementos gráficos en documentos, sin necesidad de una copia formal. El uso de Lorem Ipsum permite a los diseñadores reunir los diseños y la forma del contenido antes de que el contenido se haya creado, dando al diseño y al proceso de producción más libertad.",
+      "createdAt": "2025-06-23T20:18:05.522Z",
       "status": "active",
-      "professionalId": "3",
-      "assignedAt": "2025-06-11T15:34:18.972Z",
-      "nextAppointment": "2025-06-12",
-      "textNote": "ejemplo",
-      "professionalName": "Dr. Juan Pérez",
-      "sessionCost": 100000,
-      "commission": 20000
+      "assignedAt": "2025-07-06T16:34:53.167Z",
+      "dischargeRequest": {
+        "requestedBy": "1750710112226",
+        "requestDate": "2025-07-07T14:54:15.439Z",
+        "reason": "aaa",
+        "status": "pending"
+      },
+      "professionalId": "1750710112226",
+      "professionalName": "Dr. Prueba",
+      "sessionFrequency": "weekly",
+      "textNote": "aaa"
     },
     {
-      "id": "1749624623459",
-      "name": "Paciente ejemplo 2",
-      "description": "Ejemplo 2",
-      "createdAt": "2025-06-11T06:50:23.459Z",
-      "status": "active",
-      "professionalId": "4",
-      "assignedAt": "2025-06-11T15:15:11.389Z",
-      "nextAppointment": "2025-06-11",
-      "professionalName": "Dra. María García",
-      "textNote": "Ejemplo"
+      "id": "1750894574724",
+      "name": "Aida Victoria Merlano",
+      "description": "aaa",
+      "createdAt": "2025-06-25T23:36:14.724Z",
+      "status": "alta",
+      "professionalId": "1750710112226",
+      "professionalName": "Dr. Prueba",
+      "assignedAt": "2025-07-06T16:35:54.258Z",
+      "sessionCost": 0,
+      "commission": 0,
+      "dischargeRequest": {
+        "requestedBy": "1750710112226",
+        "requestDate": "2025-07-05T16:10:55.927Z",
+        "reason": "aaa",
+        "status": "pending"
+      },
+      "sessionFrequency": "weekly",
+      "textNote": "aaa",
+      "activatedAt": "2025-07-07T14:54:45.356Z"
     },
     {
-      "id": "1749625666803",
-      "name": "Paciente 3 ",
-      "description": "Ejemplo 3",
-      "createdAt": "2025-06-11T07:07:46.803Z",
-      "status": "active",
-      "professionalId": "4",
-      "assignedAt": "2025-06-11T15:16:52.312Z",
-      "nextAppointment": "",
-      "textNote": "Ejemplo",
-      "professionalName": "Dra. María García"
+      "id": "1751600697732",
+      "name": "Cristiano Ronaldo Dos Santos",
+      "description": "Depresion...\n\n\n\n\n\n.....",
+      "createdAt": "2025-07-04T03:44:57.732Z",
+      "status": "alta",
+      "professionalId": "1750710112226",
+      "professionalName": "Dr. Prueba",
+      "assignedAt": "2025-07-05T15:49:41.990Z",
+      "sessionFrequency": "weekly",
+      "dischargeRequest": {
+        "requestedBy": "1750710112226",
+        "requestDate": "2025-07-05T15:56:53.662Z",
+        "reason": "aaa",
+        "status": "pending"
+      },
+      "activatedAt": "2025-07-08T16:18:51.479Z",
+      "textNote": "aaa"
     },
     {
-      "id": "1749626852652",
-      "name": "Angel",
-      "description": "Ejemplo",
-      "createdAt": "2025-06-11T07:27:32.652Z",
+      "id": "1751899355457",
+      "name": "Leandro Santos",
+      "description": "Descripcion...",
+      "createdAt": "2025-07-07T14:42:35.457Z",
       "status": "active",
-      "professionalId": "3",
-      "professionalName": "Dr. Juan Pérez",
-      "assignedAt": "2025-06-11T16:30:59.830Z",
-      "nextAppointment": "",
-      "textNote": "Eejmplo",
-      "sessionCost": 200000,
-      "commission": 40000
+      "professionalId": "1751899309283",
+      "professionalName": "Dra. Prueba",
+      "textNote": "Nota de texto...",
+      "sessionFrequency": "weekly",
+      "dischargeRequest": {
+        "requestedBy": "1751899309283",
+        "requestDate": "2025-07-07T14:49:45.201Z",
+        "reason": "aaa",
+        "status": "pending"
+      }
     }
   ]
 }

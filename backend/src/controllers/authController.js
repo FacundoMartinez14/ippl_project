@@ -1,85 +1,104 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const fs = require('fs').promises;
-const path = require('path');
+const jwt       = require('jsonwebtoken');
+const bcrypt    = require('bcryptjs');
+const { User } = require('../../models');
+const { toUserDTO } = require('../../mappers/UserMapper');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu_secreto_super_seguro';
+
+const generateToken = (user) => {
+  return jwt.sign(
+    { 
+      id: user.id, 
+      role: user.role,
+      email: user.email,
+      name: user.name,
+      status: user.status
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+};
 
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    // Lee el archivo de usuarios
-    const usersData = await fs.readFile(path.join(__dirname, '../data/users.json'), 'utf8');
-    const users = JSON.parse(usersData).users;
-    
-    // Encuentra el usuario por username o email
-    const user = users.find(u => u.email === username || u.username === username);
-    
+
+    const user = await User.findOne({
+      where: { email: username }
+    });
+
     if (!user) {
       return res.status(401).json({ message: 'Usuario no encontrado' });
     }
-    
-    // Verifica la contraseña
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
       return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
-    
-    // Genera el token
-    const token = jwt.sign(
-      { 
-        id: user.id, 
-        role: user.role,
-        email: user.email,
-        name: user.name
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-    
-    // Actualizar último login
-    user.lastLogin = new Date().toISOString();
-    const updatedUsers = users.map(u => u.id === user.id ? user : u);
-    await fs.writeFile(
-      path.join(__dirname, '../data/users.json'),
-      JSON.stringify({ users: updatedUsers }, null, 2)
-    );
-    
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name,
-        status: user.status
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error en login:', error);
+
+    if (user.status === 'inactive') {
+      return res
+        .status(403)
+        .json({ message: 'Cuenta inactiva. Contacta al administrador.' });
+    }
+
+    const token = generateToken(user);
+    user.lastLogin = new Date();
+    await user.save();
+
+    const userDTO = toUserDTO(user);
+
+    res.json({ token, user: userDTO });
+  } catch (err) {
+    console.error('Error en login:', err);
     res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
+const refreshToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'Token no proporcionado' });
+    }
+
+    // Decodifica sin importar expiración
+    const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
+
+    // 🔍 Busca usuario en DB
+    const user = await User.findByPk(decoded.id);
+    if (!user || user.status === 'inactive') {
+      return res.status(403).json({ message: 'Usuario no válido o inactivo' });
+    }
+
+    // 🆕 Nuevo token
+    const newToken = generateToken(user);
+    res.json({ token: newToken });
+  } catch (error) {
+    console.error('Error al renovar token:', error);
+    const isExpired = error.name === 'TokenExpiredError';
+    return res.status(401).json({
+      message: isExpired ? 'Token expirado' : 'Token inválido',
+      code: isExpired ? 'TOKEN_EXPIRED' : undefined
+    });
   }
 };
 
 const verifyToken = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
-  
   if (!token) {
     return res.status(401).json({ message: 'Acceso denegado' });
   }
-  
   try {
-    const verified = jwt.verify(token, JWT_SECRET);
-    req.user = verified;
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Token inválido' });
+    const isExpired = error.name === 'TokenExpiredError';
+    return res.status(401).json({
+      message: isExpired ? 'Token expirado' : 'Token inválido',
+      code: isExpired ? 'TOKEN_EXPIRED' : undefined
+    });
   }
 };
 
-module.exports = {
-  login,
-  verifyToken
-}; 
+module.exports = { login, refreshToken, verifyToken };

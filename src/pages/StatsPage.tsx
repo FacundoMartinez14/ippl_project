@@ -57,12 +57,12 @@ const StatCard = ({ title, value, icon: Icon, color, bgColor, trend }: StatCardP
             </p>
           )}
         </div>
-        <div className={`${bgColor} rounded-xl p-4`}>
-          <Icon className={`h-8 w-8 ${color}`} />
+        <div className="bg-primary/10 rounded-xl p-4">
+          <Icon className="h-8 w-8 text-primary" />
         </div>
       </div>
     </div>
-    <div className={`h-1 ${bgColor}`}></div>
+    <div className="h-1 bg-primary"></div>
   </div>
 );
 
@@ -242,48 +242,48 @@ const StatsPage = () => {
           title="Usuarios Activos"
           value={stats.activeUsers}
           icon={UsersIcon}
-          color="text-blue-600"
-          bgColor="bg-blue-50"
+          color="text-primary"
+          bgColor="bg-primary/10"
           trend={12}
         />
         <StatCard
           title="Doctores Activos"
           value={stats.activeDoctors}
           icon={UserGroupIcon}
-          color="text-green-600"
-          bgColor="bg-green-50"
+          color="text-primary"
+          bgColor="bg-primary/10"
           trend={8}
         />
         <StatCard
           title="Total de Visitas"
           value={stats.totalVisits}
           icon={ChartBarIcon}
-          color="text-purple-600"
-          bgColor="bg-purple-50"
+          color="text-primary"
+          bgColor="bg-primary/10"
           trend={15}
         />
         <StatCard
           title="Posts Publicados"
           value={stats.totalPosts}
           icon={DocumentTextIcon}
-          color="text-yellow-600"
-          bgColor="bg-yellow-50"
+          color="text-primary"
+          bgColor="bg-primary/10"
           trend={5}
         />
         <StatCard
           title="Vistas Totales"
           value={stats.totalViews}
           icon={EyeIcon}
-          color="text-pink-600"
-          bgColor="bg-pink-50"
+          color="text-primary"
+          bgColor="bg-primary/10"
           trend={20}
         />
         <StatCard
           title="Likes Totales"
           value={stats.totalLikes}
           icon={HeartIcon}
-          color="text-red-600"
-          bgColor="bg-red-50"
+          color="text-primary"
+          bgColor="bg-primary/10"
           trend={10}
         />
       </div>

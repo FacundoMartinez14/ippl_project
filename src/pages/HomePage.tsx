@@ -15,6 +15,7 @@ import Modal from '../components/Modal';
 import contentManagementService from '../services/content.service';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../../public/Logo-removebg-preview.png';
+import Button from '../components/common/Button';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -135,24 +136,25 @@ const HomePage = () => {
                 <div className={`overflow-hidden transition-all duration-700 ease-in-out ${aboutExpanded ? 'max-h-screen' : 'max-h-24'}`}>
                   {fullAboutText.map((t, i) => <p key={i} className="mb-3 text-gray-700">{t}</p>)}
                 </div>
-                <button onClick={() => setAboutExpanded(!aboutExpanded)} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full font-semibold text-sm shadow hover:bg-blue-700 transition-all">
+                <Button 
+                  variant="primary" 
+                  size="md" 
+                  className="mt-2"
+                  onClick={() => setAboutExpanded(!aboutExpanded)}
+                >
                   {aboutExpanded ? 'Ver menos' : 'Ver más'}
-                </button>
+                </Button>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <Link
-                  to="/contacto"
-                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full text-white bg-[#006C73] hover:bg-[#00078A] shadow-lg hover:shadow-[#80C0D0]/30 transition-all duration-200 transform hover:scale-110 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#006C73]"
-                  data-aos="zoom-in"
-                >
-                  Solicitar consulta
+                <Link to="/contacto" className="w-full sm:w-auto">
+                  <Button variant="primary" size="lg" className="w-full sm:w-auto">
+                    Solicitar consulta
+                  </Button>
                 </Link>
-                <Link
-                  to="/profesionales"
-                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full text-[#006C73] bg-[#F9FAFB] hover:bg-[#80C0D0] shadow-lg hover:shadow-[#80C0D0]/20 transition-all duration-200 border-2 border-[#80C0D0] transform hover:scale-110 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#80C0D0]"
-                  data-aos="zoom-in"
-                >
-                  Conocer profesionales
+                <Link to="/profesionales" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    Conocer profesionales
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -185,8 +187,8 @@ const HomePage = () => {
                 data-aos="zoom-in-up"
                 data-aos-delay={idx * 100}
               >
-                <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl">
-                  <service.icon className="h-6 w-6 text-[#006C73]" />
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+                  <service.icon className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-[#374151]">{service.name}</h3>
                 <p className="mt-2 text-[#006C73]">{service.description}</p>
@@ -217,8 +219,8 @@ const HomePage = () => {
                   data-aos="zoom-in"
                   data-aos-delay={idx * 100}
                 >
-                  <div className="inline-flex items-center justify-center p-2 bg-[#80C0D0] rounded-lg">
-                    <feature.icon className="h-6 w-6 text-[#006C73]" />
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+                    <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="mt-4 text-lg font-medium text-[#374151]">{feature.name}</h3>
                   <p className="mt-2 text-sm text-[#006C73]">{feature.description}</p>

@@ -7,9 +7,13 @@ const usersRouter = require('./routes/users');
 const uploadRouter = require('./routes/upload');
 const postsRouter = require('./routes/posts');
 const professionalsRouter = require('./routes/professionals');
-const messageRouter = require('./routes/messageRoutes');
+const messagesRouter = require('./routes/messages');
 const statsRoutes = require('./routes/stats');
 const contentRoutes = require('./routes/content');
+const statusRequestsRoutes = require('./routes/statusRequests');
+const frequencyRequestsRoutes = require('./routes/frequencyRequests');
+const medicalHistoryRouter = require('./routes/medicalHistory');
+const activitiesRouter = require('./routes/activities');
 
 const app = express();
 
@@ -21,7 +25,7 @@ app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Range']
 }));
 
 app.use(express.json());
@@ -43,25 +47,38 @@ app.use('/uploads', (req, res, next) => {
   // Configurar CORS para archivos estáticos
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
   res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Range');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.header('Cross-Origin-Opener-Policy', 'same-origin');
 
-  // Si es un archivo de audio (WebM u OGG)
-  if (req.path.endsWith('.webm')) {
-    res.setHeader('Content-Type', 'audio/webm');
-    res.setHeader('Accept-Ranges', 'bytes');
-  } else if (req.path.endsWith('.ogg')) {
-    res.setHeader('Content-Type', 'audio/ogg');
+  // Manejar diferentes tipos de archivos de audio
+  if (req.path.match(/\.(webm|ogg|mp3|wav)$/)) {
+    const extension = path.extname(req.path).toLowerCase();
+    const mimeTypes = {
+      '.webm': 'audio/webm',
+      '.ogg': 'audio/ogg',
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav'
+    };
+    
+    res.setHeader('Content-Type', mimeTypes[extension]);
     res.setHeader('Accept-Ranges', 'bytes');
   }
   
   next();
 }, express.static(path.join(__dirname, '..', 'uploads'), {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.webm')) {
-      res.setHeader('Content-Type', 'audio/webm');
-      res.setHeader('Accept-Ranges', 'bytes');
-    } else if (filePath.endsWith('.ogg')) {
-      res.setHeader('Content-Type', 'audio/ogg');
+    const extension = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      '.webm': 'audio/webm',
+      '.ogg': 'audio/ogg',
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav'
+    };
+    
+    if (mimeTypes[extension]) {
+      res.setHeader('Content-Type', mimeTypes[extension]);
       res.setHeader('Accept-Ranges', 'bytes');
     }
   }
@@ -73,9 +90,13 @@ app.use('/api/users', usersRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/posts', postsRouter);
 app.use('/api/professionals', professionalsRouter);
-app.use('/api', messageRouter);
+app.use('/api/messages', messagesRouter);
 app.use('/api/stats', statsRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/status-requests', statusRequestsRoutes);
+app.use('/api/frequency-requests', frequencyRequestsRoutes);
+app.use('/api/medical-history', medicalHistoryRouter);
+app.use('/api/activities', activitiesRouter);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

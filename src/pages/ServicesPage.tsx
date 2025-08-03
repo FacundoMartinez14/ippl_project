@@ -116,8 +116,8 @@ const ServicesPage = () => {
               data-aos-delay={idx * 100}
             >
               <div className="p-8 flex flex-col items-center justify-center">
-                <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl mb-4">
-                  <service.icon className="h-8 w-8 text-[#006C73]" />
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+                  <service.icon className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-extrabold text-[#374151] text-center">
                   {service.title}
@@ -146,8 +146,8 @@ const ServicesPage = () => {
               data-aos="zoom-in-up"
               data-aos-delay={idx * 100}
             >
-              <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl">
-                <service.icon className="h-6 w-6 text-[#006C73]" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+                <service.icon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="mt-6 text-xl font-semibold text-[#374151]">
                 {service.title}
@@ -172,8 +172,8 @@ const ServicesPage = () => {
                   data-aos="fade-right"
                   data-aos-delay={idx * 150}
                 >
-                  <div className="inline-flex items-center justify-center p-3 bg-[#80C0D0] rounded-xl">
-                    <feature.icon className="h-6 w-6 text-[#006C73]" />
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+                    <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-[#374151]">

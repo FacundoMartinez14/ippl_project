@@ -1,0 +1,25 @@
+{
+  "abonos": [
+    {
+      "id": "1751983253890",
+      "professionalId": "1750710112226",
+      "professionalName": "Dr. Prueba",
+      "amount": 100,
+      "date": "2025-07-08T14:00:53.890Z"
+    },
+    {
+      "id": "1751983299443",
+      "professionalId": "1750710112226",
+      "professionalName": "Dr. Prueba",
+      "amount": 100,
+      "date": "2025-07-08T14:01:39.443Z"
+    },
+    {
+      "id": "1751992044681",
+      "professionalId": "1750710112226",
+      "professionalName": "Dr. Prueba",
+      "amount": 100,
+      "date": "2025-07-08T16:27:24.681Z"
+    }
+  ]
+}

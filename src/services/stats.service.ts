@@ -20,6 +20,8 @@ export interface SystemStats {
   posts: {
     total: number;
     published: number;
+    drafts: number;
+    comments: number;
     totalViews: number;
     totalLikes: number;
     bySection: Record<string, number>;

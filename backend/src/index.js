@@ -4,6 +4,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const app = require('./app');
+const { sequelize } = require('../models');
 
 const PORT = process.env.PORT || 5000;
 
@@ -121,6 +122,9 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     await ensureDirectories();
+    await sequelize.authenticate();
++   console.log('✅ [DB] Conectada correctamente');
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

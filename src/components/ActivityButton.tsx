@@ -16,7 +16,7 @@ const ActivityButton: React.FC<ActivityButtonProps> = ({ className = '' }) => {
     >
       <div className="flex items-center space-x-3">
         <div className="flex-shrink-0">
-          <ChartBarIcon className="h-6 w-6 text-indigo-600" />
+          <ChartBarIcon className="h-6 w-6 text-[#00B19F]" />
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-900">Actividad</h3>

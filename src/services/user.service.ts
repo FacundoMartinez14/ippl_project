@@ -4,24 +4,29 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  status: string;
+  role: 'admin' | 'professional' | 'content_manager' | 'financial';
+  status: 'active' | 'inactive';
   createdAt: string;
+  commission?: number; // porcentaje IPPL
+  saldoTotal?: number;
+  saldoPendiente?: number;
 }
 
 export interface CreateUserData {
   name: string;
   email: string;
   password: string;
-  role: string;
+  role: 'admin' | 'professional' | 'content_manager' | 'financial';
+  commission?: number;
 }
 
 export interface UpdateUserData {
   name?: string;
   email?: string;
   password?: string;
-  role?: string;
+  role?: 'admin' | 'professional' | 'content_manager' | 'financial';
   status?: string;
+  commission?: number;
 }
 
 const userService = {
@@ -42,6 +47,15 @@ const userService = {
 
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/users/${id}`);
+  },
+
+  abonarComision: async (id: string, abono: number): Promise<void> => {
+    await api.post(`/users/${id}/abonar-comision`, { abono });
+  },
+
+  getAbonos: async (): Promise<Array<{id: string, professionalId: string, professionalName: string, amount: number, date: string}>> => {
+    const response = await api.get('/users/abonos');
+    return response.data.abonos;
   }
 };
 

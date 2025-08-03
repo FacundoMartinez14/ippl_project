@@ -1,74 +1,121 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const Activity = require('../data/models/Activity');
 
 const ACTIVITIES_FILE = path.join(__dirname, '../data/activities.json');
 
-// Asegurarse de que el archivo de actividades existe
-const initializeActivitiesFile = async () => {
+// Helper function to read activities
+async function readActivities() {
   try {
-    await fs.access(ACTIVITIES_FILE);
+    const data = await fs.readFile(ACTIVITIES_FILE, 'utf8');
+    return JSON.parse(data);
   } catch (error) {
-    await fs.writeFile(ACTIVITIES_FILE, JSON.stringify({ activities: [] }));
+    return [];
   }
-};
+}
 
-// Inicializar el archivo al cargar el controlador
-initializeActivitiesFile();
+// Helper function to write activities
+async function writeActivities(activities) {
+  await fs.writeFile(ACTIVITIES_FILE, JSON.stringify(activities, null, 2));
+}
 
-const activityController = {
-  // Obtener actividades recientes
-  getRecentActivities: async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit) || 10;
-      const data = JSON.parse(await fs.readFile(ACTIVITIES_FILE, 'utf8'));
-      
-      // Ordenar por fecha y limitar la cantidad
-      const activities = data.activities
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, limit);
-
-      res.json(activities);
-    } catch (error) {
-      console.error('Error al obtener actividades:', error);
-      res.status(500).json({ message: 'Error al obtener actividades' });
-    }
-  },
-
-  // Registrar una nueva actividad
-  logActivity: async (req, res) => {
-    try {
-      const { type, description, actor } = req.body;
-
-      if (!type || !description) {
-        return res.status(400).json({ message: 'Tipo y descripción son requeridos' });
-      }
-
-      const newActivity = {
-        id: uuidv4(),
-        type,
-        description,
-        actor,
-        timestamp: new Date().toISOString()
-      };
-
-      const data = JSON.parse(await fs.readFile(ACTIVITIES_FILE, 'utf8'));
-      data.activities.push(newActivity);
-
-      // Mantener solo las últimas 1000 actividades para no sobrecargar el archivo
-      if (data.activities.length > 1000) {
-        data.activities = data.activities
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .slice(0, 1000);
-      }
-
-      await fs.writeFile(ACTIVITIES_FILE, JSON.stringify(data, null, 2));
-      res.status(201).json(newActivity);
-    } catch (error) {
-      console.error('Error al registrar actividad:', error);
-      res.status(500).json({ message: 'Error al registrar actividad' });
-    }
+// Crear una nueva actividad
+async function createActivity(type, title, description, metadata = {}) {
+  try {
+    const activities = await readActivities();
+    const newActivity = new Activity(type, title, description, metadata);
+    activities.unshift(newActivity); // Agregar al inicio para mostrar las más recientes primero
+    await writeActivities(activities);
+    return newActivity;
+  } catch (error) {
+    console.error('Error creating activity:', error);
+    throw error;
   }
-};
+}
 
-module.exports = activityController; 
+// Obtener todas las actividades
+async function getActivities(req, res) {
+  try {
+    const activities = await readActivities();
+    // Filtrar actividades relevantes para notificaciones del sistema
+    const relevantTypes = [
+      'PATIENT_DISCHARGE_REQUEST',
+      'PATIENT_ACTIVATION_REQUEST',
+      'STATUS_CHANGE_APPROVED',
+      'STATUS_CHANGE_REJECTED',
+      'FREQUENCY_CHANGE_REQUEST',
+      'FREQUENCY_CHANGE_APPROVED',
+      'FREQUENCY_CHANGE_REJECTED'
+    ];
+    const systemNotifications = activities.filter(activity => relevantTypes.includes(activity.type));
+    res.json(systemNotifications);
+  } catch (error) {
+    console.error('Error getting activities:', error);
+    res.status(500).json({ error: 'Error al obtener las actividades' });
+  }
+}
+
+// Marcar una actividad como leída
+async function markAsRead(req, res) {
+  try {
+    const { id } = req.params;
+    const activities = await readActivities();
+    const activityIndex = activities.findIndex(a => a._id === id);
+    
+    if (activityIndex === -1) {
+      return res.status(404).json({ error: 'Actividad no encontrada' });
+    }
+
+    activities[activityIndex].read = true;
+    await writeActivities(activities);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking activity as read:', error);
+    res.status(500).json({ error: 'Error al marcar la actividad como leída' });
+  }
+}
+
+// Marcar todas las actividades como leídas
+async function markAllAsRead(req, res) {
+  try {
+    const activities = await readActivities();
+    const updatedActivities = activities.map(activity => ({ ...activity, read: true }));
+    await writeActivities(updatedActivities);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking all activities as read:', error);
+    res.status(500).json({ error: 'Error al marcar todas las actividades como leídas' });
+  }
+}
+
+// Obtener el conteo de actividades no leídas
+async function getUnreadCount(req, res) {
+  try {
+    const activities = await readActivities();
+    const count = activities.filter(activity => !activity.read).length;
+    res.json({ count });
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    res.status(500).json({ error: 'Error al obtener el conteo de actividades no leídas' });
+  }
+}
+
+// Limpiar todas las actividades
+async function clearAllActivities(req, res) {
+  try {
+    await writeActivities([]);
+    res.json({ success: true, message: 'Todas las actividades han sido eliminadas' });
+  } catch (error) {
+    console.error('Error clearing activities:', error);
+    res.status(500).json({ error: 'Error al limpiar las actividades' });
+  }
+}
+
+module.exports = {
+  createActivity,
+  getActivities,
+  markAsRead,
+  markAllAsRead,
+  getUnreadCount,
+  clearAllActivities
+}; 

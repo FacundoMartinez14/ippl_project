@@ -32,7 +32,7 @@ const About: React.FC = () => {
             <ul className="space-y-3 mb-8">
               {values.map((value, index) => (
                 <li key={index} className="flex items-start">
-                  <CheckCircle size={20} className="text-teal-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <CheckCircle size={20} className="text-[#00B19F] mr-2 flex-shrink-0 mt-0.5" />
                   <span className="text-gray-600">{value}</span>
                 </li>
               ))}

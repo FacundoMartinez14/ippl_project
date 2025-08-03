@@ -99,7 +99,8 @@ const createAppointment = async (req, res) => {
       createdAt: new Date().toISOString(),
       patientName: patient?.name || 'Paciente no encontrado',
       professionalName: professional?.name || 'Profesional no encontrado',
-      audioNote: appointmentData.audioNote || null
+      audioNote: appointmentData.audioNote || null,
+      sessionCost: appointmentData.sessionCost || 0
     };
 
     // Verificar si hay audioNote y es una URL válida
@@ -174,11 +175,31 @@ const updateAppointment = async (req, res) => {
     
     // Actualizar la cita
     console.log('[updateAppointment] Actualizando cita');
+    let attendedValue = updateData.attended;
+    if (typeof attendedValue !== 'boolean') {
+      // Si no se envía attended, mantenemos el valor anterior o lo ponemos en false explícitamente
+      attendedValue = appointments[appointmentIndex].attended !== undefined ? appointments[appointmentIndex].attended : false;
+    }
     appointments[appointmentIndex] = {
       ...appointments[appointmentIndex],
       ...updateData,
+      attended: attendedValue, // Siempre guardamos el campo attended
+      sessionCost: updateData.sessionCost || appointments[appointmentIndex].sessionCost || 0,
       updatedAt: new Date().toISOString()
     };
+
+    // Recalcular y guardar el saldo del profesional
+    const professionalId = appointments[appointmentIndex].professionalId;
+    const usersFile = path.join(__dirname, '../data/users.json');
+    const usersData = JSON.parse(await fs.readFile(usersFile, 'utf8'));
+    const professional = usersData.users.find(u => u.id === professionalId && u.role === 'professional');
+    if (professional) {
+      // Calcular saldo total y pendiente solo de citas finalizadas y asistidas
+      const professionalAppointments = appointments.filter(a => a.professionalId === professionalId && a.status === 'completed' && a.attended === true);
+      professional.saldoTotal = professionalAppointments.reduce((acc, a) => acc + (a.paymentAmount || 0), 0);
+      professional.saldoPendiente = professionalAppointments.reduce((acc, a) => acc + (a.remainingBalance || 0), 0);
+      await fs.writeFile(usersFile, JSON.stringify(usersData, null, 2));
+    }
     
     console.log('[updateAppointment] Guardando cambios en archivo');
     await fs.writeFile(APPOINTMENTS_FILE, JSON.stringify({ appointments }, null, 2));
@@ -194,30 +215,43 @@ const updateAppointment = async (req, res) => {
 
 const deleteAppointment = async (req, res) => {
   try {
+    console.log('[deleteAppointment] Iniciando eliminación de cita');
     const { id } = req.params;
     
+    console.log('[deleteAppointment] ID de cita:', id);
     const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
     const { appointments } = JSON.parse(data);
     
     const appointmentIndex = appointments.findIndex(a => a.id === id);
+    console.log('[deleteAppointment] Índice de cita encontrada:', appointmentIndex);
     
     if (appointmentIndex === -1) {
+      console.log('[deleteAppointment] Cita no encontrada');
       return res.status(404).json({ message: 'Cita no encontrada' });
     }
+
+    // Guardar la información de la cita antes de eliminarla
+    const deletedAppointment = appointments[appointmentIndex];
+    console.log('[deleteAppointment] Cita a eliminar:', deletedAppointment);
+
+    // Eliminar la cita del array
+    appointments.splice(appointmentIndex, 1);
     
-    // En lugar de eliminar, marcar como cancelada
-    appointments[appointmentIndex] = {
-      ...appointments[appointmentIndex],
-      status: 'cancelled',
-      updatedAt: new Date().toISOString()
-    };
-    
+    console.log('[deleteAppointment] Guardando cambios en archivo');
     await fs.writeFile(APPOINTMENTS_FILE, JSON.stringify({ appointments }, null, 2));
     
-    res.json({ message: 'Cita cancelada correctamente' });
+    console.log('[deleteAppointment] Cita eliminada exitosamente');
+    res.json({ 
+      message: 'Cita eliminada correctamente',
+      appointment: deletedAppointment 
+    });
   } catch (error) {
-    console.error('Error al eliminar cita:', error);
-    res.status(500).json({ message: 'Error al eliminar cita' });
+    console.error('[deleteAppointment] Error al eliminar cita:', error);
+    console.error('[deleteAppointment] Stack trace:', error.stack);
+    res.status(500).json({ 
+      message: 'Error al eliminar la cita',
+      error: error.message 
+    });
   }
 };
 

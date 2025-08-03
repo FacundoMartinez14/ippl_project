@@ -6,7 +6,8 @@ import {
   PhotoIcon,
   TagIcon,
   DocumentTextIcon,
-  StarIcon
+  StarIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import postsService from '../../services/posts.service';
@@ -32,6 +33,8 @@ const PostEditor = () => {
       keywords: ''
     }
   });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [categoriaElegida, setCategoriaElegida] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -111,14 +114,19 @@ const PostEditor = () => {
       toast.error('Debes elegir una categoría para el post.');
       return;
     }
-    const categoriaElegida =
+
+    const categoria =
       formData.section === 'ninos' ? 'Niños' :
       formData.section === 'adultos' ? 'Adultos' :
       formData.section === 'noticias' ? 'Noticias' : formData.section;
-    if (!window.confirm(`¿Estás seguro de crear este post en la sección "${categoriaElegida}"?`)) {
-      return;
-    }
+    
+    setCategoriaElegida(categoria);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     setIsSubmitting(true);
+    setShowConfirmModal(false);
 
     try {
       const postData = new FormData();
@@ -138,21 +146,21 @@ const PostEditor = () => {
       postData.append('seo', JSON.stringify(seo));
 
       // Añadir datos del autor
-      if (!id) { // Solo si es un nuevo post
-      postData.append('author', user?.id || '');
-      postData.append('authorName', user?.name || '');
+      if (!id) {
+        postData.append('author', user?.id || '');
+        postData.append('authorName', user?.name || '');
       }
 
       // Generar slug desde el título si es un nuevo post
       if (!id) {
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      postData.append('slug', slug);
+        const slug = formData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        postData.append('slug', slug);
       }
 
-      // Calcular tiempo de lectura aproximado (1 min por cada 200 palabras)
+      // Calcular tiempo de lectura aproximado
       const wordCount = formData.content.split(/\s+/).length;
       const readTime = Math.max(1, Math.ceil(wordCount / 200)) + ' min';
       postData.append('readTime', readTime);
@@ -161,8 +169,8 @@ const PostEditor = () => {
         await postsService.updatePost(id, postData);
         toast.success('Post actualizado exitosamente');
       } else {
-      await postsService.createPost(postData);
-      toast.success('Post creado exitosamente');
+        await postsService.createPost(postData);
+        toast.success('Post creado exitosamente');
       }
       navigate(getBackPath());
     } catch (error) {
@@ -405,6 +413,55 @@ const PostEditor = () => {
           </div>
         </form>
       </div>
+
+      {/* Modal de confirmación */}
+      {showConfirmModal && (
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 bg-opacity-75"></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <DocumentTextIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Confirmar creación de post
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        ¿Estás seguro de crear este post en la sección "{categoriaElegida}"?
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={handleConfirmSubmit}
+                >
+                  Crear Post
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setShowConfirmModal(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

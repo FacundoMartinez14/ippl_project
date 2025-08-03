@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const USERS_FILE = path.join(__dirname, '../data/users.json');
+const ABONOS_FILE = path.join(__dirname, '../data/abonos.json');
 
 // Helper function to read users
 async function readUsers() {
@@ -17,6 +18,21 @@ async function readUsers() {
 // Helper function to write users
 async function writeUsers(users) {
   await fs.writeFile(USERS_FILE, JSON.stringify({ users }, null, 2));
+}
+
+// Helper function to read abonos
+async function readAbonos() {
+  try {
+    const data = await fs.readFile(ABONOS_FILE, 'utf8');
+    return JSON.parse(data).abonos || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+// Helper function to write abonos
+async function writeAbonos(abonos) {
+  await fs.writeFile(ABONOS_FILE, JSON.stringify({ abonos }, null, 2));
 }
 
 // Get all users
@@ -132,9 +148,57 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Abonar comisión a un profesional
+const abonarComision = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { abono } = req.body;
+    if (!abono || isNaN(abono) || abono <= 0) {
+      return res.status(400).json({ message: 'Abono inválido' });
+    }
+    const users = await readUsers();
+    const userIndex = users.findIndex(user => user.id === id && user.role === 'professional');
+    if (userIndex === -1) {
+      return res.status(404).json({ message: 'Profesional no encontrado' });
+    }
+    if (!users[userIndex].saldoPendiente) users[userIndex].saldoPendiente = 0;
+    users[userIndex].saldoPendiente += abono;
+    users[userIndex].updatedAt = new Date().toISOString();
+    await writeUsers(users);
+
+    // Guardar abono individual
+    const abonos = await readAbonos();
+    abonos.push({
+      id: Date.now().toString(),
+      professionalId: users[userIndex].id,
+      professionalName: users[userIndex].name,
+      amount: abono,
+      date: new Date().toISOString()
+    });
+    await writeAbonos(abonos);
+
+    res.json({ success: true, saldoPendiente: users[userIndex].saldoPendiente });
+  } catch (error) {
+    console.error('Error al abonar comisión:', error);
+    res.status(500).json({ message: 'Error al abonar comisión' });
+  }
+};
+
+// Obtener todos los abonos individuales
+const getAbonos = async (req, res) => {
+  try {
+    const abonos = await readAbonos();
+    res.json({ abonos });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener abonos' });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  abonarComision,
+  getAbonos
 }; 

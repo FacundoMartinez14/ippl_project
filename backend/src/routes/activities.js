@@ -1,15 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../controllers/authController');
-const activityController = require('../controllers/activityController');
+const { authenticateToken } = require('../middleware/auth');
+const { 
+  getActivities, 
+  markAsRead, 
+  markAllAsRead, 
+  getUnreadCount,
+  clearAllActivities 
+} = require('../controllers/activityController');
 
 // Todas las rutas requieren autenticación
-router.use(verifyToken);
+router.use(authenticateToken);
 
-// Obtener actividades recientes
-router.get('/', activityController.getRecentActivities);
+// Obtener todas las actividades
+router.get('/', getActivities);
 
-// Registrar una nueva actividad
-router.post('/', activityController.logActivity);
+// Obtener conteo de actividades no leídas
+router.get('/unread-count', getUnreadCount);
+
+// Marcar una actividad como leída
+router.put('/:id/read', markAsRead);
+
+// Marcar todas las actividades como leídas
+router.put('/read-all', markAllAsRead);
+
+// Limpiar todas las actividades
+router.delete('/clear-all', clearAllActivities);
 
 module.exports = router; 
