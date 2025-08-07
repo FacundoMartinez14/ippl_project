@@ -6,22 +6,20 @@
 proyecto_psicologia/
 ├── src/                    # Código fuente del frontend
 │   ├── components/         # Componentes reutilizables
-│   ├── pages/             # Páginas de la aplicación
-│   ├── routes/            # Configuración de rutas
-│   ├── services/          # Servicios y llamadas a API
-│   ├── hooks/             # Custom hooks
-│   ├── utils/             # Utilidades y funciones auxiliares
-│   ├── types/             # Definiciones de tipos TypeScript
-│   ├── context/           # Contextos de React
-│   └── config/            # Configuración de la aplicación
+│   ├── pages/              # Páginas de la aplicación
+│   ├── services/           # Servicios y llamadas a API
+│   ├── hooks/              # Custom hooks
+│   ├── utils/              # Utilidades y funciones auxiliares
+│   ├── types/              # Definiciones de tipos TypeScript
+│   ├── context/            # Contextos de React
+│   └── config/             # Configuración de la aplicación
 │
-├── server/                # Código del backend
-│   ├── routes/            # Rutas de la API
-│   ├── models/            # Modelos de datos
-│   └── middleware/        # Middleware de Express
+├── backend/                # Código del backend
+│   ├── routes/             # Rutas de la API
+│   ├── models/             # Modelos de datos
+│   └── middleware/         # Middleware de Express
 │
-├── public/                # Archivos estáticos
-└── tests/                 # Pruebas unitarias y de integración
+└── public/                 # Archivos estáticos
 ```
 
 ## Scripts Disponibles
@@ -35,6 +33,6 @@ proyecto_psicologia/
 
 - Frontend: React + TypeScript + Vite
 - Backend: Node.js + Express
-- Base de datos: MongoDB
+- Base de datos: MySQL (mediante Sequelize)
 - Estilos: Tailwind CSS
-- Testing: Vitest 
+- Testing: Vitest
