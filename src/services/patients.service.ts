@@ -109,22 +109,6 @@ const patientsService = {
     }
   },
 
-  createPatient: async (patientData: any): Promise<any> => {
-    try {
-      const response = await api.post('/patients', patientData);
-      // Registrar la actividad
-      await activityService.logActivity({
-        type: 'new_patient',
-        description: `Nuevo paciente registrado: ${patientData.name}`,
-        actor: patientData.professionalName || 'Sistema'
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error al crear paciente:', error);
-      throw error;
-    }
-  },
-
   updatePatient: async (id: string, patientData: any): Promise<any> => {
     try {
       const response = await api.put(`/patients/${id}/assign`, patientData);

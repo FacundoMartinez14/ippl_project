@@ -53,52 +53,59 @@ const upload = multer({
   }
 });
 
+const uploadAudio = upload.single('audio');
+
 // Ruta para subir audio
-router.post('/audio', authenticateToken, upload.single('audio'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ 
-        message: 'No se proporcionó ningún archivo de audio',
-        success: false 
-      });
-    }
-
-    console.log('Archivo recibido:', req.file);
-
-    // Construir la URL relativa del audio
-    const audioUrl = `/uploads/audios/${req.file.filename}`;
-    
-    // Verificar que el archivo existe y es accesible
+router.post(
+  '/audio',
+  authenticateToken,
+  uploadAudio, // MODIFICADO: uso del middleware named uploadAudio
+  async (req, res) => {
     try {
-      await fs.access(path.join(__dirname, '../../uploads/audios', req.file.filename));
-      console.log('Archivo guardado exitosamente en:', audioUrl);
+      if (!req.file) {
+        return res.status(400).json({ 
+          message: 'No se proporcionó ningún archivo de audio',
+          success: false 
+        });
+      }
+
+      console.log('Archivo recibido:', req.file);
+
+      // Construir la URL relativa del audio
+      const audioUrl = `/uploads/audios/${req.file.filename}`;
+      
+      // Verificar que el archivo existe y es accesible
+      try {
+        await fs.access(path.join(__dirname, '../../uploads/audios', req.file.filename));
+        console.log('Archivo guardado exitosamente en:', audioUrl);
+      } catch (error) {
+        console.error('Error verificando archivo:', error);
+        return res.status(500).json({ 
+          message: 'Error al guardar el archivo de audio',
+          success: false,
+          error: error.message
+        });
+      }
+      
+      // Enviar respuesta con URL y filename
+      res.json({
+        message: 'Audio subido exitosamente',
+        success: true,
+        url: audioUrl,
+        audioUrl: audioUrl,
+        filename: req.file.filename,
+        mimetype: req.file.mimetype
+      });
     } catch (error) {
-      console.error('Error verificando archivo:', error);
-      return res.status(500).json({ 
-        message: 'Error al guardar el archivo de audio',
+      console.error('Error al subir audio:', error);
+      res.status(500).json({ 
+        message: 'Error al subir el archivo de audio',
         success: false,
-        error: error.message
+        error: error.message 
       });
     }
-    
-    // Enviar una respuesta consistente con ambos campos url y audioUrl
-    res.json({
-      message: 'Audio subido exitosamente',
-      success: true,
-      url: audioUrl,
-      audioUrl: audioUrl,
-      filename: req.file.filename,
-      mimetype: req.file.mimetype
-    });
-  } catch (error) {
-    console.error('Error al subir audio:', error);
-    res.status(500).json({ 
-      message: 'Error al subir el archivo de audio',
-      success: false,
-      error: error.message 
-    });
   }
-});
+);
 
 // --- Carrusel de imágenes ---
 const carouselDir = path.join(__dirname, '../../../public/images/carousel');
