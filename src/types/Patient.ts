@@ -19,4 +19,5 @@ export interface Patient {
     reason: string;
     status: string;
   };
+  audioNote?: string;
 } 
