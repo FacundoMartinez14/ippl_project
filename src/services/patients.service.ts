@@ -1,25 +1,10 @@
 import api from './api';
 import { AxiosResponse } from 'axios';
+import { Patient } from '../types/Patient';
 import activityService from './activity.service';
 import { API_URL } from '../config/config';
 import frequencyRequestService, { CreateFrequencyRequestDTO } from './frequencyRequest.service';
 
-export interface Patient {
-  id: string;
-  name: string;
-  status: 'active' | 'pending' | 'inactive' | 'absent';
-  professionalId?: string;
-  professionalName?: string;
-  audioNote?: string;
-  textNote?: string;
-  description?: string;
-  createdAt: string;
-  assignedAt?: string;
-  email?: string;
-  phone?: string;
-  sessionFrequency?: 'weekly' | 'biweekly' | 'monthly';
-  statusChangeReason?: string;
-}
 
 export interface CreatePatientDTO {
   name: string;
@@ -30,7 +15,7 @@ export interface AssignPatientDTO {
   patientId: string;
   professionalId: string;
   professionalName: string;
-  status?: 'active' | 'pending' | 'inactive' | 'absent';
+  status?: 'active' | 'pending' | 'inactive' | 'absent' | 'alta';
   assignedAt?: string;
   textNote?: string;
   audioNote?: string;

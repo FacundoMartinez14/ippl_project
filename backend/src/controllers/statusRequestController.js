@@ -1,362 +1,276 @@
-const fs = require('fs').promises;
-const path = require('path');
+'use strict';
+const { sequelize, StatusRequest, Patient } = require('../../models');
+const { toStatusRequestDTO, toStatusRequestDTOList } = require('../../mappers/StatusRequestMapper');
 const { createActivity } = require('./activityController');
 
-const STATUS_REQUESTS_FILE = path.join(__dirname, '../data/status-requests.json');
-const PATIENTS_FILE = path.join(__dirname, '../data/patients.json');
+const VALID_STATUSES = ['active', 'pending', 'inactive', 'absent', 'alta'];
 
-const VALID_STATUSES = ['active', 'pending', 'inactive', 'absent'];
-
-// Asegurarse de que el archivo existe
-const initializeRequestsFile = async () => {
-  try {
-    await fs.access(STATUS_REQUESTS_FILE);
-  } catch (error) {
-    await fs.writeFile(STATUS_REQUESTS_FILE, JSON.stringify({ requests: [] }, null, 2));
-  }
-};
-
-// Crear una nueva solicitud
 const createRequest = async (req, res) => {
   try {
-    await initializeRequestsFile();
-    const requestData = req.body;
-    
-    // Validar estados
-    if (!VALID_STATUSES.includes(requestData.currentStatus) || !VALID_STATUSES.includes(requestData.requestedStatus)) {
-      return res.status(400).json({ 
-        message: 'Estado no válido. Los estados permitidos son: activo, pendiente, inactivo y ausente' 
+    const {
+      patientId,
+      patientName: snapPatientName,
+      professionalId: bodyProfessionalId,
+      professionalName: snapProfessionalName,
+      currentStatus,
+      requestedStatus,
+      reason,
+      type, // opcional: 'activation' | 'status_change'
+    } = req.body;
+
+    // Validaciones básicas
+    if (!patientId) {
+      return res.status(400).json({ message: 'Falta patientId' });
+    }
+    if (!VALID_STATUSES.includes(currentStatus) || !VALID_STATUSES.includes(requestedStatus)) {
+      return res.status(400).json({
+        message: 'Estado no válido. Permitidos: active, pending, inactive, absent, alta',
+      });
+    }
+    // Regla original: este endpoint permite únicamente active -> inactive
+    if (currentStatus === 'active' && requestedStatus !== 'inactive') {
+      return res.status(400).json({
+        message: 'Solo se permiten solicitudes de cambio de estado de active a inactive',
       });
     }
 
-    // Validar cambio específico de activo a inactivo
-    if (requestData.currentStatus === 'active' && requestData.requestedStatus !== 'inactive') {
+    // Cargar paciente para snapshot y verificación
+    const patient = await Patient.findByPk(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
+
+    // Evitar duplicados pendientes para el mismo paciente
+    const existingPending = await StatusRequest.findOne({
+      where: { patientId, status: 'pending' },
+    });
+    if (existingPending) {
       return res.status(400).json({
-        message: 'Solo se permiten solicitudes de cambio de estado de activo a inactivo'
+        message: 'Ya existe una solicitud pendiente para este paciente',
       });
     }
-    
-    // Leer solicitudes existentes
-    const data = await fs.readFile(STATUS_REQUESTS_FILE, 'utf8');
-    const { requests } = JSON.parse(data);
-    
-    // Verificar si ya existe una solicitud pendiente para este paciente
-    const existingRequest = requests.find(r => 
-      r.patientId === requestData.patientId && 
-      r.status === 'pending'
-    );
-    
-    if (existingRequest) {
-      return res.status(400).json({ 
-        message: 'Ya existe una solicitud pendiente para este paciente' 
-      });
-    }
-    
-    // Crear nueva solicitud
-    const newRequest = {
-      id: Date.now().toString(),
-      ...requestData,
+
+    // Determinar profesional (si no viene en body, tomamos del usuario autenticado si existe)
+    const professionalId = bodyProfessionalId ?? req.user?.id ?? null;
+    const professionalName = snapProfessionalName ?? req.user?.name ?? null;
+
+    const computedType =
+      (currentStatus === 'pending' && requestedStatus !== 'pending')
+      ? 'activation'
+      : 'status_change';
+
+    // Crear solicitud
+    const created = await StatusRequest.create({
+      patientId,
+      patientName: snapPatientName ?? patient.name,
+      professionalId,
+      professionalName,
+      currentStatus,
+      requestedStatus,
+      reason: reason ?? null,
       status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-    
-    requests.push(newRequest);
-    await fs.writeFile(STATUS_REQUESTS_FILE, JSON.stringify({ requests }, null, 2));
-    
-    res.status(201).json(newRequest);
+      type: type ?? computedType,
+    });
+
+    return res.status(201).json(toStatusRequestDTO(created));
   } catch (error) {
     console.error('Error al crear solicitud:', error);
-    res.status(500).json({ message: 'Error al crear la solicitud' });
+    return res.status(500).json({ message: 'Error al crear la solicitud' });
   }
 };
 
 // Obtener solicitudes pendientes
 const getPendingRequests = async (req, res) => {
   try {
-    await initializeRequestsFile();
-    const data = await fs.readFile(STATUS_REQUESTS_FILE, 'utf8');
-    const { requests } = JSON.parse(data);
-    
-    const pendingRequests = requests.filter(r => r.status === 'pending');
-    res.json({ requests: pendingRequests });
+    const pending = await StatusRequest.findAll({
+      where: { status: 'pending' },
+      order: [['createdAt', 'DESC']],
+    });
+
+    return res.json({ requests: toStatusRequestDTOList(pending) });
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
-    res.status(500).json({ message: 'Error al obtener las solicitudes' });
+    return res.status(500).json({ message: 'Error al obtener las solicitudes' });
   }
 };
 
 // Obtener solicitudes de un profesional
 const getProfessionalRequests = async (req, res) => {
   try {
-    await initializeRequestsFile();
     const { professionalId } = req.params;
-    const data = await fs.readFile(STATUS_REQUESTS_FILE, 'utf8');
-    const { requests } = JSON.parse(data);
-    
-    const professionalRequests = requests.filter(r => r.professionalId === professionalId);
-    res.json({ requests: professionalRequests });
+    if (!professionalId) {
+      return res.status(400).json({ message: 'Falta professionalId' });
+    }
+
+    const rows = await StatusRequest.findAll({
+      where: { professionalId },
+      order: [['createdAt', 'DESC']],
+    });
+
+    return res.json({ requests: toStatusRequestDTOList(rows) });
   } catch (error) {
     console.error('Error al obtener solicitudes del profesional:', error);
-    res.status(500).json({ message: 'Error al obtener las solicitudes' });
+    return res.status(500).json({ message: 'Error al obtener las solicitudes' });
   }
 };
 
-// Aprobar una solicitud
+// Aprobar una solicitud de cambio de estado
 const approveRequest = async (req, res) => {
   console.log('DEBUG: Llamada a approveRequest con ID:', req.params.requestId);
+  const { requestId } = req.params;
+  const { adminResponse } = req.body;
+
   try {
-    const { requestId } = req.params;
-    const { adminResponse } = req.body;
-    
-    // Leer solicitudes
-    const requestsData = await fs.readFile(STATUS_REQUESTS_FILE, 'utf8');
-    const { requests } = JSON.parse(requestsData);
-    
-    const request = requests.find(r => r.id === requestId);
-    if (!request) {
+    const result = await sequelize.transaction(async (t) => {
+      // 1) Buscar la solicitud
+      const request = await StatusRequest.findByPk(requestId, { transaction: t });
+      if (!request) {
+        return { kind: 'not_found' };
+      }
+      if (request.status !== 'pending') {
+        return { kind: 'already_processed' };
+      }
+
+      // 2) Buscar paciente
+      const patient = await Patient.findByPk(request.patientId, { transaction: t });
+      if (!patient) {
+        return { kind: 'patient_not_found' };
+      }
+
+      // 3) Actualizar estado del paciente según la solicitud
+      const oldStatus = patient.status;
+      const newStatus = request.requestedStatus;
+
+      // Nota: no bloqueamos cambios desde/hacia "alta" (por tu decisión de negocio)
+      patient.status = newStatus;
+      await patient.save({ transaction: t });
+
+      // 4) Marcar solicitud como aprobada
+      request.status = 'approved';
+      request.adminResponse = adminResponse ?? null;
+      await request.save({ transaction: t });
+
+      return { kind: 'ok', request, patient, oldStatus, newStatus };
+    });
+
+    // Manejo de resultados fuera de la transacción
+    if (result.kind === 'not_found') {
       console.log('DEBUG: Solicitud no encontrada para ID:', requestId);
       return res.status(404).json({ message: 'Solicitud no encontrada' });
     }
-    
-    if (request.status !== 'pending') {
+    if (result.kind === 'already_processed') {
       return res.status(400).json({ message: 'Esta solicitud ya fue procesada' });
     }
-    
-    // Actualizar estado del paciente
-    const patientsData = await fs.readFile(PATIENTS_FILE, 'utf8');
-    const { patients } = JSON.parse(patientsData);
-    
-    const patientIndex = patients.findIndex(p => p.id === request.patientId);
-    if (patientIndex === -1) {
+    if (result.kind === 'patient_not_found') {
       return res.status(404).json({ message: 'Paciente no encontrado' });
     }
-    
-    // Actualizar el paciente según el tipo de solicitud
-    if (request.type === 'frequency_change') {
-      patients[patientIndex].sessionFrequency = request.requestedFrequency;
-      
-      // Crear actividad para el cambio de frecuencia
-      await createActivity(
-        'FREQUENCY_CHANGE_APPROVED',
-        'Cambio de frecuencia aprobado',
-        `Se ha aprobado el cambio de frecuencia de sesiones para el paciente ${request.patientName} de ${request.currentFrequency} a ${request.requestedFrequency}`,
-        {
-          patientId: request.patientId,
-          patientName: request.patientName,
-          professionalId: request.professionalId,
-          professionalName: request.professionalName,
-          oldFrequency: request.currentFrequency,
-          newFrequency: request.requestedFrequency,
-          adminResponse
-        }
-      );
-    } else if (request.type === 'activation') {
-      patients[patientIndex].status = 'alta';
-      patients[patientIndex].activatedAt = new Date().toISOString();
-      await createActivity(
-        'PATIENT_ACTIVATION_APPROVED',
-        'Alta de paciente aprobada',
-        `Se ha aprobado el alta para el paciente ${request.patientName}`,
-        {
-          patientId: request.patientId,
-          patientName: request.patientName,
-          professionalId: request.professionalId,
-          professionalName: request.professionalName,
-          adminResponse
-        }
-      );
-    } else {
-      // Solicitud de cambio de estado
-      patients[patientIndex].status = request.requestedStatus;
-      
-      // Crear actividad para el cambio de estado
-      await createActivity(
-        'STATUS_CHANGE_APPROVED',
-        'Cambio de estado aprobado',
-        `Se ha aprobado el cambio de estado para el paciente ${request.patientName} de ${request.currentStatus} a ${request.requestedStatus}`,
-        {
-          patientId: request.patientId,
-          patientName: request.patientName,
-          professionalId: request.professionalId,
-          professionalName: request.professionalName,
-          oldStatus: request.currentStatus,
-          newStatus: request.requestedStatus,
-          adminResponse
-        }
-      );
+
+    const { request, patient, oldStatus, newStatus } = result;
+
+    // 5) Crear actividad (fuera de la tx; si falla el log, no rompemos la aprobación)
+    try {
+      const activityType =
+        request.requestedStatus === 'alta'
+          ? 'PATIENT_ACTIVATION_APPROVED'
+          : 'STATUS_CHANGE_APPROVED';
+
+      const title =
+        activityType === 'PATIENT_ACTIVATION_APPROVED'
+          ? 'Alta de paciente aprobada'
+          : 'Cambio de estado aprobado';
+
+      const description =
+        activityType === 'PATIENT_ACTIVATION_APPROVED'
+          ? `Se ha aprobado el alta para el paciente ${request.patientName}`
+          : `Se ha aprobado el cambio de estado para el paciente ${request.patientName} de ${oldStatus} a ${newStatus}`;
+
+      await createActivity(activityType, title, description, {
+        patientId: String(request.patientId),
+        patientName: request.patientName,
+        professionalId: request.professionalId ? String(request.professionalId) : undefined,
+        professionalName: request.professionalName,
+        oldStatus,
+        newStatus,
+        adminResponse: adminResponse ?? undefined,
+      });
+    } catch (logErr) {
+      console.error('WARN: No se pudo registrar la actividad de aprobación:', logErr);
     }
-    
-    // Actualizar solicitud
-    const requestIndex = requests.findIndex(r => r.id === requestId);
-    requests[requestIndex] = {
-      ...request,
-      status: 'approved',
-      adminResponse,
-      updatedAt: new Date().toISOString(),
-      changedAt: new Date().toISOString()
-    };
-    
-    // Guardar cambios
-    await Promise.all([
-      fs.writeFile(STATUS_REQUESTS_FILE, JSON.stringify({ requests }, null, 2)),
-      fs.writeFile(PATIENTS_FILE, JSON.stringify({ patients }, null, 2))
-    ]);
-    
-    res.json(requests[requestIndex]);
+
+    // 6) Devolver DTO de la solicitud aprobada
+    return res.json(toStatusRequestDTO(request));
   } catch (error) {
     console.error('Error al aprobar solicitud:', error);
-    res.status(500).json({ message: 'Error al aprobar la solicitud' });
+    return res.status(500).json({ message: 'Error al aprobar la solicitud' });
   }
 };
 
-// Rechazar una solicitud
+
+// Rechazar una solicitud (status-request)
 const rejectRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { adminResponse } = req.body;
-    
-    if (!adminResponse) {
+
+    if (!adminResponse || !String(adminResponse).trim()) {
       return res.status(400).json({ message: 'Se requiere una razón para el rechazo' });
     }
-    
-    // Leer solicitudes
-    const data = await fs.readFile(STATUS_REQUESTS_FILE, 'utf8');
-    const { requests } = JSON.parse(data);
-    
-    const requestIndex = requests.findIndex(r => r.id === requestId);
-    if (requestIndex === -1) {
+
+    // Traer la solicitud
+    const sr = await StatusRequest.findByPk(requestId);
+    if (!sr) {
       return res.status(404).json({ message: 'Solicitud no encontrada' });
     }
-    
-    const request = requests[requestIndex];
-    if (request.status !== 'pending') {
+    if (sr.status !== 'pending') {
       return res.status(400).json({ message: 'Esta solicitud ya fue procesada' });
     }
-    
-    // Actualizar solicitud
-    requests[requestIndex] = {
-      ...request,
-      status: 'rejected',
-      adminResponse,
-      updatedAt: new Date().toISOString(),
-      changedAt: new Date().toISOString()
-    };
-    
-    await fs.writeFile(STATUS_REQUESTS_FILE, JSON.stringify({ requests }, null, 2));
 
-    // Crear actividad según el tipo de solicitud
-    if (request.type === 'frequency_change') {
-      await createActivity(
-        'FREQUENCY_CHANGE_REJECTED',
-        'Cambio de frecuencia rechazado',
-        `Se ha rechazado el cambio de frecuencia de sesiones para el paciente ${request.patientName}`,
-        {
-          patientId: request.patientId,
-          patientName: request.patientName,
-          professionalId: request.professionalId,
-          professionalName: request.professionalName,
-          requestedFrequency: request.requestedFrequency,
-          currentFrequency: request.currentFrequency,
-          reason: adminResponse
-        }
-      );
-    } else {
+    // (Opcional) Traer paciente para validar existencia/estado actual (no modificamos al paciente en un rechazo)
+    const patient = await Patient.findByPk(sr.patientId);
+    if (!patient) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
+
+    // Transacción para garantizar consistencia entre la actualización y la actividad
+    let t;
+    try {
+      t = await sequelize.transaction();
+
+      // Rechazar solicitud
+      sr.status = 'rejected';
+      sr.adminResponse = adminResponse;
+      await sr.save({ transaction: t });
+
+      // Registrar actividad (el cliente espera STATUS_CHANGE_* para status)
+      // Para "alta" (alta médica) también usamos STATUS_CHANGE_REJECTED para que el front la capte.
       await createActivity(
         'STATUS_CHANGE_REJECTED',
         'Cambio de estado rechazado',
-        `Se ha rechazado el cambio de estado para el paciente ${request.patientName}`,
+        `Se ha rechazado el cambio de estado para el paciente ${sr.patientName}`,
         {
-          patientId: request.patientId,
-          patientName: request.patientName,
-          professionalId: request.professionalId,
-          professionalName: request.professionalName,
-          requestedStatus: request.requestedStatus,
-          currentStatus: request.currentStatus,
-          reason: adminResponse
-        }
+          patientId: String(sr.patientId ?? ''),
+          patientName: sr.patientName,
+          professionalId: String(sr.professionalId ?? ''),
+          professionalName: sr.professionalName,
+          requestedStatus: sr.requestedStatus,
+          currentStatus: sr.currentStatus,
+          reason: adminResponse,
+        },
+        { transaction: t } // si tu createActivity soporta options; si no, quita este arg.
       );
+
+      await t.commit();
+    } catch (err) {
+      if (t) await t.rollback();
+      throw err;
     }
-    
-    res.json(requests[requestIndex]);
+
+    // Refrescar y devolver DTO
+    await sr.reload();
+    return res.json(toStatusRequestDTO(sr));
   } catch (error) {
     console.error('Error al rechazar solicitud:', error);
-    res.status(500).json({ message: 'Error al rechazar la solicitud' });
-  }
-};
-
-const requestFrequencyChange = async (req, res) => {
-  try {
-    const { patientId } = req.params;
-    const { newFrequency, reason, currentFrequency } = req.body;
-    const { id: professionalId, name: professionalName } = req.user;
-
-    // Leer datos del paciente
-    const patientsData = await fs.readFile(PATIENTS_FILE, 'utf8');
-    const { patients } = JSON.parse(patientsData);
-    const patient = patients.find(p => p.id === patientId);
-
-    if (!patient) {
-      return res.status(404).json({ error: 'Paciente no encontrado' });
-    }
-
-    // Leer solicitudes existentes
-    let statusRequestsData = { requests: [] };
-    try {
-      const statusRequestsContent = await fs.readFile(STATUS_REQUESTS_FILE, 'utf8');
-      statusRequestsData = JSON.parse(statusRequestsContent);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-
-    // Verificar si ya existe una solicitud pendiente
-    const existingRequest = statusRequestsData.requests.find(r => 
-      r.patientId === patientId && 
-      r.status === 'pending' &&
-      r.type === 'frequency_change'
-    );
-
-    if (existingRequest) {
-      return res.status(400).json({ message: 'Ya existe una solicitud pendiente para este paciente' });
-    }
-
-    // Crear nueva solicitud
-    const newRequest = {
-      id: Date.now().toString(),
-      type: 'frequency_change',
-      patientId,
-      patientName: patient.name,
-      professionalId,
-      professionalName,
-      currentFrequency,
-      requestedFrequency: newFrequency,
-      reason,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-
-    statusRequestsData.requests.push(newRequest);
-    await fs.writeFile(STATUS_REQUESTS_FILE, JSON.stringify(statusRequestsData, null, 2));
-
-    // Crear una actividad para notificar la solicitud
-    await createActivity(
-      'FREQUENCY_CHANGE_REQUEST',
-      'Solicitud de cambio de frecuencia',
-      `El profesional ${professionalName} ha solicitado cambiar la frecuencia de sesiones del paciente ${patient.name} de ${currentFrequency} a ${newFrequency}`,
-      {
-        patientId,
-        patientName: patient.name,
-        professionalId,
-        professionalName,
-        currentFrequency,
-        newFrequency,
-        reason
-      }
-    );
-
-    res.json({ success: true, message: 'Solicitud de cambio de frecuencia enviada correctamente' });
-  } catch (error) {
-    console.error('Error requesting frequency change:', error);
-    res.status(500).json({ error: 'Error al solicitar el cambio de frecuencia' });
+    return res.status(500).json({ message: 'Error al rechazar la solicitud' });
   }
 };
 
@@ -366,5 +280,4 @@ module.exports = {
   getProfessionalRequests,
   approveRequest,
   rejectRequest,
-  requestFrequencyChange
 }; 

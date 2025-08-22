@@ -1,5 +1,44 @@
 [
   {
+    "_id": "1755036040203",
+    "type": "PATIENT_ASSIGNED",
+    "title": "Paciente asignado",
+    "description": "Paciente Fernando Martinez derivado al profesional ID 3",
+    "date": "2025-08-12T22:00:40.203Z",
+    "metadata": {
+      "patientId": "1",
+      "professionalId": "3",
+      "sessionFrequency": "weekly"
+    },
+    "read": false
+  },
+  {
+    "_id": "1755033778169",
+    "type": "PATIENT_ASSIGNED",
+    "title": "Paciente asignado",
+    "description": "Paciente Juan Perez derivado al profesional ID 3",
+    "date": "2025-08-12T21:22:58.169Z",
+    "metadata": {
+      "patientId": "1",
+      "professionalId": "3",
+      "sessionFrequency": "weekly"
+    },
+    "read": false
+  },
+  {
+    "_id": "1754959707252",
+    "type": "PATIENT_ASSIGNED",
+    "title": "Paciente asignado",
+    "description": "Paciente Juan Perez derivado al profesional ID 3",
+    "date": "2025-08-12T00:48:27.252Z",
+    "metadata": {
+      "patientId": "1",
+      "professionalId": "3",
+      "sessionFrequency": "weekly"
+    },
+    "read": false
+  },
+  {
     "_id": "1751995270633",
     "type": "FREQUENCY_CHANGE_REQUESTED",
     "title": "Nueva solicitud de cambio de frecuencia",

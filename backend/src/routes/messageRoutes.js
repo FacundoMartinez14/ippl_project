@@ -1,46 +1,29 @@
+// src/routes/messages.js
+'use strict';
 const express = require('express');
 const router = express.Router();
-const messageController = require('../controllers/messageController');
 const { authenticateToken } = require('../middleware/auth');
-const fs = require('fs').promises;
-const path = require('path');
-
-const messagesFilePath = path.join(__dirname, '../data/messages.json');
+const { requireMessageManager, loadMessageById } = require('../middleware/messages');
+const messageController = require('../controllers/messageController');
 
 // Ruta pública para enviar mensajes
 router.post('/messages', messageController.createMessage);
 
 // Rutas protegidas (requieren autenticación)
-router.get('/messages', authenticateToken, messageController.getAllMessages);
-router.put('/messages/:id/read', authenticateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const data = await fs.readFile(messagesFilePath, 'utf8');
-        let { messages } = JSON.parse(data);
-        
-        // Encontrar y actualizar el mensaje específico
-        messages = messages.map(msg => 
-            msg._id === id ? { ...msg, leido: true } : msg
-        );
-        
-        await fs.writeFile(messagesFilePath, JSON.stringify({ messages }, null, 2));
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error al marcar mensaje como leído:', error);
-        res.status(500).json({ error: 'Error al actualizar el mensaje' });
-    }
-});
+router.get('/messages', authenticateToken, requireMessageManager, messageController.getAllMessages);
+// Marcar como leído (usa el middleware que precarga el mensaje)
+router.put('/messages/:id/read',
+  authenticateToken,
+  requireMessageManager,
+  loadMessageById,
+  messageController.markAsRead
+);
 
 // Ruta para limpiar todos los mensajes
-router.delete('/messages/clear-all', authenticateToken, async (req, res) => {
-    try {
-        // Sobrescribir el archivo con un array vacío
-        await fs.writeFile(messagesFilePath, JSON.stringify({ messages: [] }, null, 2));
-        res.json({ success: true, message: 'Todos los mensajes han sido eliminados' });
-    } catch (error) {
-        console.error('Error al limpiar mensajes:', error);
-        res.status(500).json({ error: 'Error al eliminar los mensajes' });
-    }
-});
+router.delete('/messages/clear-all',
+  authenticateToken,
+  requireMessageManager,
+  messageController.clearAllMessages
+);
 
 module.exports = router; 

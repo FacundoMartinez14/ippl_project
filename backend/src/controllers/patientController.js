@@ -1,355 +1,322 @@
 'use strict';
-const { Patient, Derivation } = require('../../models');
+const { Patient, Derivation, User, StatusRequest } = require('../../models');
 const { toPatientDTO } = require('../../mappers/PatientMapper');
 const { createActivity } = require('./activityController');
 
 // Obtener todos los pacientes con su última derivación
 async function getAllPatients(req, res) {
-	try {
-		const patients = await Patient.findAll({
-			where: { active: true },
-			include: [
-				{
-					model: Derivation,
-					as: 'derivations',
-					limit: 1,
-					order: [['createdAt', 'DESC']],
-				},
-			],
-		});
+  try {
+    const patients = await Patient.findAll({
+      where: { active: true },
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: Derivation,
+          as: 'derivations',
+          attributes: ['textNote', 'audioNote', 'createdAt'],
+          separate: true,
+          limit: 1,
+          order: [['createdAt', 'DESC']],
+        },
+      ],
+    });
 
-		const dtos = patients.map((p) => {
-			const plain = p.get({ plain: true });
-			const lastDer = plain.derivations[0] || {};
-			const enriched = {
-				...plain,
-				textNote: lastDer.textNote,
-				audioNote: lastDer.audioNote,
-			};
-			return toPatientDTO(enriched);
-		});
+    const dtos = patients.map((p) => {
+      const plain = p.get({ plain: true });
+      const lastDer = plain.derivations?.[0] || {};
+      const enriched = {
+        ...plain,
+        textNote: lastDer.textNote,
+        audioNote: lastDer.audioNote,
+      };
+      return toPatientDTO(enriched);
+    });
 
-		res.json({ patients: dtos });
-	} catch (err) {
-		console.error('Error al obtener pacientes:', err);
-		res.status(500).json({ message: 'Error al obtener pacientes' });
-	}
+    return res.json({ patients: dtos });
+  } catch (err) {
+    console.error('Error al obtener pacientes:', err);
+    return res.status(500).json({ message: 'Error al obtener pacientes' });
+  }
 }
 
-// Obtener pacientes de un profesional
+// GET /patients/professional/:professionalId
 async function getProfessionalPatients(req, res) {
-	try {
-		const { professionalId } = req.params;
-		const patients = await Patient.findAll({
-			where: { professionalId },
-			include: [
-				{
-					model: Derivation,
-					as: 'derivations',
-					limit: 1,
-					order: [['createdAt', 'DESC']],
-				},
-			],
-		});
+  try {
+    const { professionalId } = req.params;
 
-		const dtos = patients.map((p) => {
-			const plain = p.get({ plain: true });
-			const lastDer = plain.derivations[0] || {};
-			const enriched = {
-				...plain,
-				textNote: lastDer.textNote,
-				audioNote: lastDer.audioNote,
-			};
-			return toPatientDTO(enriched);
-		});
+    const patients = await Patient.findAll({
+      where: { professionalId },
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: Derivation,
+          as: 'derivations',
+          attributes: ['textNote', 'audioNote', 'createdAt'],
+          separate: true,
+          limit: 1,
+          order: [['createdAt', 'DESC']],
+        },
+      ],
+    });
 
-		res.json({ patients: dtos });
-	} catch (err) {
-		console.error('Error al obtener pacientes del profesional:', err);
-		res.status(500).json({ message: 'Error al obtener pacientes' });
-	}
+    const dtos = patients.map((p) => {
+      const plain = p.get({ plain: true });
+      const lastDer = plain.derivations?.[0] || {};
+      const enriched = {
+        ...plain,
+        textNote: lastDer.textNote,
+        audioNote: lastDer.audioNote,
+      };
+      return toPatientDTO(enriched);
+    });
+
+    return res.json({ patients: dtos });
+  } catch (err) {
+    console.error('Error al obtener pacientes del profesional:', err);
+    return res.status(500).json({ message: 'Error al obtener pacientes' });
+  }
 }
+
 
 async function assignPatient(req, res) {
-	try {
-		const { patientId } = req.params;
-		const {
-			professionalId,
-			professionalName,
-			status,
-			assignedAt,
-			textNote,
-			audioNote,
-			sessionFrequency,
-			statusChangeReason,
-		} = req.body;
+  try {
+    const { patientId } = req.params;
+    const {
+      professionalId,
+      professionalName,
+      status,
+      assignedAt,
+      textNote,
+      audioNote,
+      sessionFrequency,
+      statusChangeReason,
+    } = req.body;
 
-		const patient = await Patient.findByPk(patientId);
-		if (!patient)
-			return res.status(404).json({ message: 'Paciente no encontrado' });
+    const patient = await Patient.findByPk(patientId);
+    if (!patient) return res.status(404).json({ message: 'Paciente no encontrado' });
 
-		if (professionalId !== undefined) patient.professionalId = professionalId;
-		if (professionalName !== undefined)
-			patient.professionalName = professionalName;
-		if (status !== undefined) patient.status = status;
-		if (assignedAt !== undefined) patient.assignedAt = new Date(assignedAt);
-		if (sessionFrequency) patient.sessionFrequency = sessionFrequency;
-		await patient.save();
+    // Actualiza campos del paciente
+    if (professionalId !== undefined) patient.professionalId = professionalId;
 
-		const derivation = await Derivation.create({
-			patientId,
-			professionalId,
-			textNote,
-			audioNote,
-			sessionFrequency,
-			statusChangeReason,
-		});
+    if (professionalName !== undefined) {
+      patient.professionalName = professionalName;
+    } else if (professionalId && !patient.professionalName) {
+      const prof = await User.findByPk(professionalId, { attributes: ['name'] });
+      patient.professionalName = prof?.name || null;
+    }
 
-		// 3) Log de actividad
-		await createActivity(
-			'PATIENT_ASSIGNED',
-			'Paciente asignado',
-			`Paciente ${patient.name} derivado al profesional ID ${professionalId}`,
-			{ patientId, professionalId, sessionFrequency }
-		);
+    if (status !== undefined) patient.status = status;
+    if (assignedAt !== undefined) patient.assignedAt = new Date(assignedAt);
+    if (sessionFrequency !== undefined) patient.sessionFrequency = sessionFrequency;
 
-		// Enriquecer y devolver DTO
-		const plain = patient.get({ plain: true });
-		const enriched = {
-			...plain,
-			textNote: derivation.textNote,
-			audioNote: derivation.audioNote,
-		};
-		return res.json(toPatientDTO(enriched));
-	} catch (err) {
-		console.error('Error al asignar paciente:', err);
-		res.status(500).json({ message: 'Error al asignar paciente' });
-	}
+    await patient.save();
+
+    // Registrar derivación
+    const derivation = await Derivation.create({
+      patientId: patient.id,
+      professionalId: professionalId ?? patient.professionalId ?? null,
+      textNote: textNote ?? null,
+      audioNote: audioNote ?? null,
+      sessionFrequency: sessionFrequency ?? patient.sessionFrequency ?? null,
+      statusChangeReason: statusChangeReason ?? null,
+    });
+
+    // Actividad
+    await createActivity(
+      'PATIENT_ASSIGNED',
+      'Paciente asignado',
+      `Paciente ${patient.name} derivado al profesional ${patient.professionalName ?? professionalId}`,
+      {
+        patientId: String(patient.id),
+        patientName: patient.name,
+        professionalId: professionalId ? String(professionalId) : undefined,
+        professionalName: patient.professionalName ?? undefined,
+        sessionFrequency: patient.sessionFrequency ?? undefined,
+      }
+    );
+
+    // Respuesta → DTO enriquecido con la última derivación
+    const plain = patient.get({ plain: true });
+    const enriched = {
+      ...plain,
+      textNote: derivation.textNote,
+      audioNote: derivation.audioNote,
+    };
+    return res.json(toPatientDTO(enriched));
+  } catch (err) {
+    console.error('Error al asignar paciente:', err);
+    return res.status(500).json({ message: 'Error al asignar paciente' });
+  }
 }
 
+// POST /patients
 async function addPatient(req, res) {
-	try {
-		const { name, description } = req.body;
-		const patient = await Patient.create({
-			name,
-			description,
-			status: 'pending',
-		});
+  try {
+    const { name, description, email, phone, status, assignedAt, sessionFrequency } = req.body;
 
-		return res.status(201).json(toPatientDTO(patient));
-	} catch (err) {
-		console.error('Error al agregar paciente:', err);
+    if (!name) return res.status(400).json({ message: 'El nombre es requerido' });
 
-		return res.status(500).json({ message: 'Error al agregar paciente' });
-	}
+    const patient = await Patient.create({
+      name,
+      description: description ?? null,
+      email: email ?? null,
+      phone: phone ?? null,
+      status: status ?? 'pending',
+      assignedAt: assignedAt ? new Date(assignedAt) : null,
+      sessionFrequency: sessionFrequency ?? null,
+      active: true,
+    });
+
+    return res.status(201).json(toPatientDTO(patient));
+  } catch (err) {
+    console.error('Error al agregar paciente:', err);
+    return res.status(500).json({ message: 'Error al agregar paciente' });
+  }
 }
 
+
+// DELETE /patients/:id
 async function deletePatient(req, res) {
-	try {
-		const { id } = req.params;
-		const patient = await Patient.findByPk(id);
-		if (!patient || !patient.active) {
-			return res.status(404).json({ message: 'Paciente no encontrado' });
-		}
+  try {
+    const { id } = req.params;
+    const patient = await Patient.findByPk(id);
+    if (!patient || !patient.active) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
 
-		// Soft delete
-		patient.active = false;
-		await patient.save();
-		return res.json({ message: 'Paciente eliminado correctamente' });
-	} catch (err) {
-		console.error('Error al eliminar paciente:', err);
-		return res.status(500).json({ message: 'Error al eliminar paciente' });
-	}
+    patient.active = false;
+    await patient.save();
+
+    await createActivity(
+      'PATIENT_SOFT_DELETED',
+      'Paciente deshabilitado',
+      `Se deshabilitó al paciente ${patient.name}`,
+      { patientId: String(patient.id), patientName: patient.name }
+    );
+
+    return res.json({ message: 'Paciente eliminado correctamente' });
+  } catch (err) {
+    console.error('Error al eliminar paciente:', err);
+    return res.status(500).json({ message: 'Error al eliminar paciente' });
+  }
 }
+
 
 // Solicitar dar de baja a un paciente
+// POST /patients/:patientId/request-discharge
 async function requestDischargePatient(req, res) {
-	try {
-		const { patientId } = req.params;
-		const { reason } = req.body;
-		const { id, name } = req.user;
+  try {
+    const { patientId } = req.params;
+    const { reason } = req.body;
+    const { id: professionalId, name: professionalName } = req.user;
 
-		// Leer datos del paciente
-		const data = await fs.readFile(PATIENTS_FILE, 'utf8');
-		const { patients } = JSON.parse(data);
-		const patient = patients.find((p) => p.id === patientId);
+    const patient = await Patient.findByPk(patientId);
+    if (!patient) return res.status(404).json({ error: 'Paciente no encontrado' });
 
-		if (!patient) {
-			return res.status(404).json({ error: 'Paciente no encontrado' });
-		}
+    // ¿Solicitud pendiente para este paciente?
+    const pending = await StatusRequest.findOne({
+      where: { patientId, status: 'pending' },
+    });
+    if (pending) {
+      return res.status(400).json({ message: 'Ya existe una solicitud pendiente para este paciente' });
+    }
 
-		// Actualizar el estado del paciente
-		patient.dischargeRequest = {
-			requestedBy: id,
-			requestDate: new Date().toISOString(),
-			reason,
-			status: 'pending',
-		};
+    const sr = await StatusRequest.create({
+      patientId,
+      patientName: patient.name,
+      professionalId,
+      professionalName,
+      currentStatus: patient.status,
+      requestedStatus: 'inactive',
+      reason: reason ?? '',
+      status: 'pending',
+    });
 
-		// Guardar cambios en patients.json
-		await fs.writeFile(PATIENTS_FILE, JSON.stringify({ patients }, null, 2));
+    await createActivity(
+      'PATIENT_DISCHARGE_REQUEST',
+      'Solicitud de baja de paciente',
+      `El profesional ${professionalName} ha solicitado dar de baja al paciente ${patient.name}`,
+      {
+        patientId: String(patient.id),
+        patientName: patient.name,
+        professionalId: String(professionalId),
+        professionalName,
+        reason: reason ?? '',
+      }
+    );
 
-		// Crear solicitud en status-requests.json
-		let statusRequestsData = { requests: [] };
-		try {
-			const statusRequestsContent = await fs.readFile(
-				STATUS_REQUESTS_FILE,
-				'utf8'
-			);
-			statusRequestsData = JSON.parse(statusRequestsContent);
-		} catch (error) {
-			if (error.code !== 'ENOENT') throw error;
-		}
-
-		// Verificar si ya existe una solicitud pendiente
-		const existingRequest = statusRequestsData.requests.find(
-			(r) => r.patientId === patientId && r.status === 'pending'
-		);
-
-		if (existingRequest) {
-			return res.status(400).json({
-				message: 'Ya existe una solicitud pendiente para este paciente',
-			});
-		}
-
-		// Crear nueva solicitud
-		const newRequest = {
-			id: Date.now().toString(),
-			patientId,
-			patientName: patient.name,
-			professionalId: id,
-			professionalName: name,
-			currentStatus: patient.status,
-			requestedStatus: 'inactive',
-			reason,
-			status: 'pending',
-			createdAt: new Date().toISOString(),
-		};
-
-		statusRequestsData.requests.push(newRequest);
-		await fs.writeFile(
-			STATUS_REQUESTS_FILE,
-			JSON.stringify(statusRequestsData, null, 2)
-		);
-
-		// Crear una actividad para notificar la solicitud
-		await createActivity(
-			'PATIENT_DISCHARGE_REQUEST',
-			'Solicitud de baja de paciente',
-			`El profesional ${name} ha solicitado dar de baja al paciente ${patient.name}`,
-			{
-				patientId,
-				patientName: patient.name,
-				professionalId: id,
-				professionalName: name,
-				reason,
-			}
-		);
-
-		res.json({
-			success: true,
-			message: 'Solicitud de baja enviada correctamente',
-		});
-	} catch (error) {
-		console.error('Error requesting patient discharge:', error);
-		res.status(500).json({ error: 'Error al solicitar la baja del paciente' });
-	}
+    return res.json({
+      success: true,
+      message: 'Solicitud de baja enviada correctamente',
+      requestId: String(sr.id),
+    });
+  } catch (error) {
+    console.error('Error requesting patient discharge:', error);
+    return res.status(500).json({ error: 'Error al solicitar la baja del paciente' });
+  }
 }
+
+
 
 // Solicitar alta de un paciente
 async function requestActivationPatient(req, res) {
-	try {
-		const { patientId } = req.params;
-		const { reason } = req.body;
-		const { id, name } = req.user;
+  try {
+    const { patientId } = req.params;
+    const { reason } = req.body;
+    const { id: professionalId, name: professionalName } = req.user;
 
-		const data = await fs.readFile(PATIENTS_FILE, 'utf8');
-		const { patients } = JSON.parse(data);
-		const patient = patients.find((p) => p.id === patientId);
+    const patient = await Patient.findByPk(patientId);
+    if (!patient) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
 
-		if (!patient) {
-			return res.status(404).json({ error: 'Paciente no encontrado' });
-		}
+    // 1) Ya existe solicitud de ALTA pendiente para este paciente
+    const existingActivation = await StatusRequest.findOne({
+      where: { patientId, status: 'pending', requestedStatus: 'alta' },
+    });
+    if (existingActivation) {
+      return res.status(400).json({
+        message: 'Ya existe una solicitud de alta pendiente para este paciente',
+      });
+    }
 
-		let statusRequestsData = { requests: [] };
-		try {
-			const statusRequestsContent = await fs.readFile(
-				STATUS_REQUESTS_FILE,
-				'utf8'
-			);
-			statusRequestsData = JSON.parse(statusRequestsContent);
-		} catch (error) {
-			if (error.code !== 'ENOENT') throw error;
-		}
+    // 4) Crear la solicitud en BD
+    await StatusRequest.create({
+      patientId,
+      patientName: patient.name,            // snapshot
+      professionalId,
+      professionalName,                     // snapshot
+      currentStatus: patient.status,
+      requestedStatus: 'alta',              // alta médica (cierre de tratamiento)
+      reason,
+      status: 'pending',
+    });
 
-		const existingRequest = statusRequestsData.requests.find(
-			(r) =>
-				r.patientId === patientId &&
-				r.status === 'pending' &&
-				r.requestedStatus === 'alta'
-		);
+    // 5) Crear actividad para el feed
+    await createActivity(
+      'PATIENT_ACTIVATION_REQUEST',
+      'Solicitud de alta de paciente',
+      `El profesional ${professionalName} ha solicitado dar de alta al paciente ${patient.name}`,
+      {
+        patientId: String(patient.id),
+        patientName: patient.name,
+        professionalId: String(professionalId),
+        professionalName,
+        currentStatus: patient.status,
+        requestedStatus: 'alta',
+        reason,
+        status: 'pending',
+      }
+    );
 
-		if (existingRequest) {
-			return res.status(400).json({
-				message: 'Ya existe una solicitud de alta pendiente para este paciente',
-			});
-		}
-
-		// No permitir solicitar alta si ya hay una solicitud pendiente de inactivación
-		const pendingDischarge = statusRequestsData.requests.find(
-			(r) =>
-				r.patientId === patientId &&
-				r.status === 'pending' &&
-				r.requestedStatus === 'inactive'
-		);
-		if (pendingDischarge) {
-			return res.status(400).json({
-				message:
-					'No se puede solicitar el alta mientras hay una solicitud de inactivación pendiente para este paciente',
-			});
-		}
-
-		const newRequest = {
-			id: Date.now().toString(),
-			patientId,
-			patientName: patient.name,
-			professionalId: id,
-			professionalName: name,
-			currentStatus: patient.status,
-			requestedStatus: 'alta',
-			reason,
-			status: 'pending',
-			createdAt: new Date().toISOString(),
-			type: 'activation',
-		};
-
-		statusRequestsData.requests.push(newRequest);
-		await fs.writeFile(
-			STATUS_REQUESTS_FILE,
-			JSON.stringify(statusRequestsData, null, 2)
-		);
-
-		await createActivity(
-			'PATIENT_ACTIVATION_REQUEST',
-			'Solicitud de alta de paciente',
-			`El profesional ${name} ha solicitado dar de alta al paciente ${patient.name}`,
-			{
-				patientId,
-				patientName: patient.name,
-				professionalId: id,
-				professionalName: name,
-				reason,
-			}
-		);
-
-		res.json({
-			success: true,
-			message: 'Solicitud de alta enviada correctamente',
-		});
-	} catch (error) {
-		console.error('Error requesting patient activation:', error);
-		res.status(500).json({ error: 'Error al solicitar el alta del paciente' });
-	}
+    return res.json({
+      success: true,
+      message: 'Solicitud de alta enviada correctamente',
+    });
+  } catch (error) {
+    console.error('Error requesting patient activation:', error);
+    return res.status(500).json({ error: 'Error al solicitar el alta del paciente' });
+  }
 }
 
 module.exports = {

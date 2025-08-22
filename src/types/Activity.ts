@@ -20,6 +20,8 @@ export interface Activity {
     postTitle?: string;
     appointmentId?: string;
     reason?: string;
+    adminResponse?: string;
+    [k: string]: unknown;
   };
   read: boolean;
 } 

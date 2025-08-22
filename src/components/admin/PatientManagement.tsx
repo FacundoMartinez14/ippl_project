@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusIcon, TrashIcon, PencilIcon, MicrophoneIcon, EyeIcon, CheckCircleIcon, XCircleIcon, ClockIcon, DocumentTextIcon, UserPlusIcon, BellIcon, MagnifyingGlassIcon, ArrowUpCircleIcon } from '@heroicons/react/24/outline';
-import patientsService, { Patient, AssignPatientDTO, CreatePatientDTO } from '../../services/patients.service';
+import patientsService, { AssignPatientDTO, CreatePatientDTO } from '../../services/patients.service';
+import { Patient } from '../../types/Patient';
 import userService from '../../services/user.service';
 import statusRequestService from '../../services/statusRequest.service';
 import { StatusRequest } from '../../types/StatusRequest';
@@ -75,7 +76,7 @@ const AssignModal: React.FC<AssignModalProps> = ({ isOpen, onClose, onAssign, pa
     e.preventDefault();
     
     try {
-      const selectedProf = professionals.find(p => p.id === selectedProfessional);
+      const selectedProf = professionals.find(p => p.id == selectedProfessional);
       if (!selectedProf || !patient) {
         toast.error('Por favor selecciona un profesional');
         return;
@@ -739,7 +740,6 @@ const PatientManagement = () => {
           id: user.id,
           name: user.name
         }));
-      
       setProfessionals(psychologists);
     } catch (error) {
       console.error('Error loading data:', error);

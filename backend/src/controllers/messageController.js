@@ -1,39 +1,89 @@
-const messageService = require('../services/messageService');
+'use strict';
 
-const messageController = {
-  // Create a new message
-  async createMessage(req, res) {
-    try {
-      const message = await messageService.saveMessage(req.body);
-      res.status(201).json({ message: 'Mensaje enviado exitosamente' });
-    } catch (error) {
-      console.error('Error al crear mensaje:', error);
-      res.status(500).json({ error: 'Error al enviar el mensaje' });
-    }
-  },
+const { Message } = require('../../models');
+const { toMessageDTO, toMessageDTOList } = require('../../mappers/MessageMapper');
 
-  // Get all messages
-  async getAllMessages(req, res) {
-    try {
-      const messages = await messageService.getAllMessages();
-      res.json(messages);
-    } catch (error) {
-      console.error('Error al obtener mensajes:', error);
-      res.status(500).json({ error: 'Error al obtener los mensajes' });
-    }
-  },
+// Create a new message
+async function createMessage(req, res) {
+  try {
+    const { nombre, apellido, correoElectronico, mensaje, fecha } = req.body;
 
-  // Mark message as read
-  async markAsRead(req, res) {
-    try {
-      const { id } = req.params;
-      await messageService.markAsRead(id);
-      res.json({ message: 'Mensaje marcado como leído' });
-    } catch (error) {
-      console.error('Error al marcar mensaje como leído:', error);
-      res.status(500).json({ error: 'Error al actualizar el mensaje' });
+    // Validaciones básicas
+    if (!nombre || !apellido || !correoElectronico || !mensaje) {
+      return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
+
+    const created = await Message.create({
+      nombre,
+      apellido,
+      correoElectronico,
+      mensaje,
+      // `fecha` es opcional; si no viene, el default del modelo es NOW
+      ...(fecha ? { fecha: new Date(fecha) } : {}),
+      leido: false,
+    });
+
+    // Si preferís devolver el objeto creado:
+    // return res.status(201).json(toMessageDTO(created));
+
+    return res.status(201).json({ message: 'Mensaje enviado exitosamente' });
+  } catch (error) {
+    console.error('Error al crear mensaje:', error);
+    return res.status(500).json({ error: 'Error al enviar el mensaje' });
   }
-};
+}
 
-module.exports = messageController; 
+// Get all messages (array plano)
+async function getAllMessages(req, res) {
+  try {
+    const rows = await Message.findAll({
+      order: [
+        ['fecha', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json(toMessageDTOList(rows));
+  } catch (error) {
+    console.error('Error al obtener mensajes:', error);
+    return res.status(500).json({ error: 'Error al obtener los mensajes' });
+  }
+}
+
+// Mark message as read
+async function markAsRead(req, res) {
+  try {
+    const { id } = req.params;
+
+    const msg = req.message || await Message.findByPk(id)
+    if (!msg) {
+      return res.status(404).json({ error: 'Mensaje no encontrado' });
+    }
+
+    if (!msg.leido) {
+      await msg.update({ leido: true });
+    }
+
+    return res.json({ message: 'Mensaje marcado como leído' });
+  } catch (error) {
+    console.error('Error al marcar mensaje como leído:', error);
+    return res.status(500).json({ error: 'Error al actualizar el mensaje' });
+  }
+}
+
+async function clearAllMessages(req, res) {
+  try {
+    await Message.destroy({ where: {} });
+    return res.json({ success: true, message: 'Todos los mensajes han sido eliminados' });
+  } catch (error) {
+    console.error('Error al limpiar mensajes:', error);
+    return res.status(500).json({ error: 'Error al eliminar los mensajes' });
+  }
+}
+
+module.exports = {
+  createMessage,
+  getAllMessages,
+  markAsRead,
+  clearAllMessages,
+};

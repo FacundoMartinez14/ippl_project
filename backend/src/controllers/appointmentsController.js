@@ -1,256 +1,306 @@
-const fs = require('fs').promises;
-const path = require('path');
+const { Op } = require('sequelize');
+const { Appointment, Patient, User } = require('../../models');
+const { toAppointmentDTO, toAppointmentDTOList } = require('../../mappers/AppointmentMapper');
 
-const APPOINTMENTS_FILE = path.join(__dirname, '../data/appointments.json');
+function toMinutes(hhmm) {
+  const [h, m] = String(hhmm || '').split(':').map((x) => parseInt(x, 10));
+  return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+}
+
+function toAmount(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
 const getAllAppointments = async (req, res) => {
   try {
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    res.json({ appointments });
+    const appts = await Appointment.findAll({
+      where: { active: true },
+      order: [
+        ['date', 'DESC'],
+        ['startTime', 'ASC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json({ appointments: toAppointmentDTOList(appts) });
   } catch (error) {
     console.error('Error al obtener citas:', error);
-    res.status(500).json({ message: 'Error al obtener citas' });
+    return res.status(500).json({ message: 'Error al obtener citas' });
   }
 };
 
 const getProfessionalAppointments = async (req, res) => {
   try {
     const { professionalId } = req.params;
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    
-    const professionalAppointments = appointments.filter(a => a.professionalId === professionalId);
-    
-    res.json({ appointments: professionalAppointments });
+
+    const appts = await Appointment.findAll({
+      where: { active: true, professionalId },
+      order: [
+        ['date', 'DESC'],
+        ['startTime', 'ASC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json({ appointments: toAppointmentDTOList(appts) });
   } catch (error) {
     console.error('Error al obtener citas del profesional:', error);
-    res.status(500).json({ message: 'Error al obtener citas' });
+    return res.status(500).json({ message: 'Error al obtener citas' });
   }
 };
 
 const getPatientAppointments = async (req, res) => {
   try {
     const { patientId } = req.params;
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    
-    const patientAppointments = appointments.filter(a => a.patientId === patientId);
-    
-    res.json({ appointments: patientAppointments });
+
+    const appts = await Appointment.findAll({
+      where: { active: true, patientId },
+      order: [
+        ['date', 'DESC'],
+        ['startTime', 'ASC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json({ appointments: toAppointmentDTOList(appts) });
   } catch (error) {
     console.error('Error al obtener citas del paciente:', error);
-    res.status(500).json({ message: 'Error al obtener citas' });
+    return res.status(500).json({ message: 'Error al obtener citas' });
   }
 };
 
 const createAppointment = async (req, res) => {
   try {
-    console.log('[createAppointment] Iniciando creación de cita');
-    console.log('[createAppointment] Datos recibidos:', req.body);
-    
-    const appointmentData = req.body;
-    
-    let data = { appointments: [] };
-    try {
-      console.log('[createAppointment] Intentando leer archivo de citas:', APPOINTMENTS_FILE);
-      const fileContent = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-      data = JSON.parse(fileContent);
-      console.log('[createAppointment] Archivo de citas leído correctamente');
-    } catch (error) {
-      console.error('[createAppointment] Error al leer archivo de citas:', error);
-      if (error.code !== 'ENOENT') throw error;
+    const {
+      patientId,
+      professionalId,
+      date,
+      startTime,
+      endTime,
+      type = 'regular',
+      notes,
+      audioNote,
+      sessionCost,
+    } = req.body;
+
+    // 1) Validaciones básicas
+    if (!patientId || !professionalId || !date || !startTime || !endTime) {
+      return res.status(400).json({
+        message:
+          'Faltan campos requeridos (patientId, professionalId, date, startTime, endTime)',
+      });
     }
-    
-    // Verificar disponibilidad
-    console.log('[createAppointment] Verificando disponibilidad del horario');
-    const conflictingAppointment = data.appointments.find(a => 
-      a.professionalId === appointmentData.professionalId &&
-      a.date === appointmentData.date &&
-      a.startTime === appointmentData.startTime &&
-      a.status !== 'cancelled'
-    );
-    
-    if (conflictingAppointment) {
-      console.log('[createAppointment] Horario no disponible:', conflictingAppointment);
+    if (toMinutes(endTime) <= toMinutes(startTime)) {
+      return res.status(400).json({ message: 'endTime debe ser mayor que startTime' });
+    }
+
+    // 2) Snapshots de nombres (si no existen, seguimos con texto por defecto)
+    const [patient, professional] = await Promise.all([
+      Patient.findByPk(patientId, { attributes: ['id', 'name'] }),
+      User.findByPk(professionalId, { attributes: ['id', 'name'] }),
+    ]);
+
+    // 3) Chequeo de solapamientos: misma fecha/profesional, activo y no cancelado
+    const sameDay = await Appointment.findAll({
+      where: {
+        active: true,
+        professionalId,
+        date,
+        status: { [Op.ne]: 'cancelled' },
+      },
+      attributes: ['id', 'startTime', 'endTime'],
+    });
+    const newStart = toMinutes(startTime);
+    const newEnd = toMinutes(endTime);
+    const overlaps = sameDay.some((a) => {
+      const s = toMinutes(a.startTime);
+      const e = toMinutes(a.endTime);
+      // Solapa si empieza antes de que termine la otra y termina después de que empieza la otra
+      return newStart < e && s < newEnd;
+    });
+    if (overlaps) {
       return res.status(400).json({ message: 'El horario seleccionado no está disponible' });
     }
 
-    // Obtener información del paciente y profesional
-    console.log('[createAppointment] Obteniendo información de paciente y profesional');
-    const patientsFile = path.join(__dirname, '../data/patients.json');
-    const usersFile = path.join(__dirname, '../data/users.json');
-    
-    console.log('[createAppointment] Leyendo archivo de pacientes:', patientsFile);
-    const patientsData = JSON.parse(await fs.readFile(patientsFile, 'utf8'));
-    console.log('[createAppointment] Leyendo archivo de usuarios:', usersFile);
-    const usersData = JSON.parse(await fs.readFile(usersFile, 'utf8'));
+    // 4) Saneos / normalizaciones
+    const safeAudio =
+      audioNote && typeof audioNote === 'string' && audioNote.startsWith('/uploads/')
+        ? audioNote
+        : null;
 
-    const patient = patientsData.patients.find(p => p.id === appointmentData.patientId);
-    const professional = usersData.users.find(u => u.id === appointmentData.professionalId);
-    
-    console.log('[createAppointment] Paciente encontrado:', patient?.name);
-    console.log('[createAppointment] Profesional encontrado:', professional?.name);
-    
-    const newAppointment = {
-      id: Date.now().toString(),
-      ...appointmentData,
-      status: 'scheduled',
-      createdAt: new Date().toISOString(),
+    const sessionCostNum = toAmount(sessionCost);
+    // Como no hay paymentAmount en el DTO de creación, asumimos 0 al calcular remainingBalance
+    const paymentAmountNum = 0;
+    const remainingBalanceNum =
+      sessionCostNum !== null ? Math.max(sessionCostNum - paymentAmountNum, 0) : null;
+
+    // 5) Crear cita (status fijo 'scheduled'; completedAt lo setean hooks al marcar 'completed')
+    const created = await Appointment.create({
+      patientId,
       patientName: patient?.name || 'Paciente no encontrado',
+      professionalId,
       professionalName: professional?.name || 'Profesional no encontrado',
-      audioNote: appointmentData.audioNote || null,
-      sessionCost: appointmentData.sessionCost || 0
-    };
+      date,
+      startTime,
+      endTime,
+      type,                 // 'regular' | 'first_time' | 'emergency'
+      status: 'scheduled',  // ← forzado al crear
+      notes: notes ?? null,
+      audioNote: safeAudio,
+      sessionCost: sessionCostNum,
+      attended: null,               // no viene en el DTO de creación
+      paymentAmount: null,          // no viene en el DTO de creación
+      remainingBalance: remainingBalanceNum,
+      // active: true por defecto (soft delete en el modelo)
+    });
 
-    // Verificar si hay audioNote y es una URL válida
-    if (newAppointment.audioNote) {
-      console.log('[createAppointment] Verificando URL de audio:', newAppointment.audioNote);
-      if (!newAppointment.audioNote.startsWith('/uploads/')) {
-        console.error('[createAppointment] URL de audio inválida:', newAppointment.audioNote);
-        newAppointment.audioNote = null;
-      }
-    }
-    
-    data.appointments.push(newAppointment);
-    
-    console.log('[createAppointment] Guardando nueva cita en archivo');
-    await fs.writeFile(APPOINTMENTS_FILE, JSON.stringify(data, null, 2));
-    
-    console.log('[createAppointment] Cita creada exitosamente:', newAppointment.id);
-    res.status(201).json(newAppointment);
+    return res.status(201).json(toAppointmentDTO(created));
   } catch (error) {
     console.error('[createAppointment] Error al crear cita:', error);
-    console.error('[createAppointment] Stack trace:', error.stack);
-    res.status(500).json({ message: 'Error al crear cita', error: error.message });
+    return res.status(500).json({ message: 'Error al crear cita', error: error.message });
   }
 };
 
+
 const updateAppointment = async (req, res) => {
   try {
-    console.log('[updateAppointment] Iniciando actualización de cita');
     const { id } = req.params;
-    const updateData = req.body;
-    
-    console.log('[updateAppointment] ID de cita:', id);
-    console.log('[updateAppointment] Datos de actualización:', updateData);
-    
-    console.log('[updateAppointment] Leyendo archivo de citas:', APPOINTMENTS_FILE);
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    
-    const appointmentIndex = appointments.findIndex(a => a.id === id);
-    console.log('[updateAppointment] Índice de cita encontrada:', appointmentIndex);
-    
-    if (appointmentIndex === -1) {
-      console.log('[updateAppointment] Cita no encontrada');
+    const body = req.body;
+
+    const appt = await Appointment.findByPk(id);
+    if (!appt || appt.active === false) {
       return res.status(404).json({ message: 'Cita no encontrada' });
     }
-    
-    // Si se está actualizando el horario, verificar disponibilidad
-    if (updateData.date && updateData.startTime) {
-      console.log('[updateAppointment] Verificando disponibilidad del nuevo horario');
-      const conflictingAppointment = appointments.find(a => 
-        a.id !== id &&
-        a.professionalId === appointments[appointmentIndex].professionalId &&
-        a.date === updateData.date &&
-        a.startTime === updateData.startTime &&
-        a.status !== 'cancelled'
-      );
-      
-      if (conflictingAppointment) {
-        console.log('[updateAppointment] Horario no disponible:', conflictingAppointment);
+
+    // Campos permitidos
+    const updates = {};
+    const fields = [
+      'date', 'startTime', 'endTime',
+      'type', 'status',
+      'notes', 'audioNote',
+      'sessionCost', 'attended',
+      'paymentAmount', // remainingBalance lo recalculamos
+      'patientId', 'professionalId',
+    ];
+    for (const f of fields) if (body[f] !== undefined) updates[f] = body[f];
+
+    // Normalizar attended (acepta string "true"/"false")
+    if (updates.attended !== undefined) {
+      if (typeof updates.attended === 'string') {
+        updates.attended = updates.attended.toLowerCase() === 'true';
+      } else {
+        updates.attended = !!updates.attended;
+      }
+    }
+
+    // Saneo de audioNote (solo rutas internas)
+    if (updates.audioNote !== undefined) {
+      const v = updates.audioNote;
+      updates.audioNote =
+        v && typeof v === 'string' && v.startsWith('/uploads/') ? v : null;
+    }
+
+    // Si cambian fecha/hora/profesional → validar (end > start) + solapamientos
+    const newDate  = updates.date          ?? appt.date;
+    const newStart = updates.startTime     ?? appt.startTime;
+    const newEnd   = updates.endTime       ?? appt.endTime;
+    const newProf  = updates.professionalId ?? appt.professionalId;
+
+    if (newStart && newEnd && toMinutes(newEnd) <= toMinutes(newStart)) {
+      return res.status(400).json({ message: 'endTime debe ser mayor que startTime' });
+    }
+
+    if (
+      updates.date !== undefined ||
+      updates.startTime !== undefined ||
+      updates.endTime !== undefined ||
+      updates.professionalId !== undefined
+    ) {
+      const sameDay = await Appointment.findAll({
+        where: {
+          id: { [Op.ne]: appt.id },
+          active: true,
+          professionalId: newProf,
+          date: newDate,
+          status: { [Op.ne]: 'cancelled' },
+        },
+        attributes: ['id', 'startTime', 'endTime'],
+      });
+
+      const nS = toMinutes(newStart);
+      const nE = toMinutes(newEnd);
+      const overlaps = sameDay.some(a => {
+        const s = toMinutes(a.startTime);
+        const e = toMinutes(a.endTime);
+        return nS < e && s < nE;
+      });
+      if (overlaps) {
         return res.status(400).json({ message: 'El horario seleccionado no está disponible' });
       }
     }
 
-    // Verificar si hay audioNote y es una URL válida
-    if (updateData.audioNote) {
-      console.log('[updateAppointment] Verificando URL de audio:', updateData.audioNote);
-      if (!updateData.audioNote.startsWith('/uploads/')) {
-        console.error('[updateAppointment] URL de audio inválida:', updateData.audioNote);
-        updateData.audioNote = null;
-      }
+    // Refrescar snapshots si cambian IDs
+    if (updates.patientId !== undefined) {
+      const patient = await Patient.findByPk(updates.patientId, { attributes: ['id', 'name'] });
+      updates.patientName = patient?.name || 'Paciente no encontrado';
     }
-    
-    // Actualizar la cita
-    console.log('[updateAppointment] Actualizando cita');
-    let attendedValue = updateData.attended;
-    if (typeof attendedValue !== 'boolean') {
-      // Si no se envía attended, mantenemos el valor anterior o lo ponemos en false explícitamente
-      attendedValue = appointments[appointmentIndex].attended !== undefined ? appointments[appointmentIndex].attended : false;
+    if (updates.professionalId !== undefined) {
+      const prof = await User.findByPk(updates.professionalId, { attributes: ['id', 'name'] });
+      updates.professionalName = prof?.name || 'Profesional no encontrado';
     }
-    appointments[appointmentIndex] = {
-      ...appointments[appointmentIndex],
-      ...updateData,
-      attended: attendedValue, // Siempre guardamos el campo attended
-      sessionCost: updateData.sessionCost || appointments[appointmentIndex].sessionCost || 0,
-      updatedAt: new Date().toISOString()
-    };
 
-    // Recalcular y guardar el saldo del profesional
-    const professionalId = appointments[appointmentIndex].professionalId;
-    const usersFile = path.join(__dirname, '../data/users.json');
-    const usersData = JSON.parse(await fs.readFile(usersFile, 'utf8'));
-    const professional = usersData.users.find(u => u.id === professionalId && u.role === 'professional');
-    if (professional) {
-      // Calcular saldo total y pendiente solo de citas finalizadas y asistidas
-      const professionalAppointments = appointments.filter(a => a.professionalId === professionalId && a.status === 'completed' && a.attended === true);
-      professional.saldoTotal = professionalAppointments.reduce((acc, a) => acc + (a.paymentAmount || 0), 0);
-      professional.saldoPendiente = professionalAppointments.reduce((acc, a) => acc + (a.remainingBalance || 0), 0);
-      await fs.writeFile(usersFile, JSON.stringify(usersData, null, 2));
+    // Normalizar montos y recalcular remainingBalance si corresponde
+    let recalcRB = false;
+
+    if (updates.sessionCost !== undefined) {
+      updates.sessionCost = toAmount(updates.sessionCost);
+      recalcRB = true;
     }
-    
-    console.log('[updateAppointment] Guardando cambios en archivo');
-    await fs.writeFile(APPOINTMENTS_FILE, JSON.stringify({ appointments }, null, 2));
-    
-    console.log('[updateAppointment] Cita actualizada exitosamente');
-    res.json(appointments[appointmentIndex]);
+    if (updates.paymentAmount !== undefined) {
+      updates.paymentAmount = toAmount(updates.paymentAmount);
+      recalcRB = true;
+    }
+
+    if (recalcRB) {
+      const sc = updates.sessionCost   !== undefined ? (updates.sessionCost   ?? 0) : (toAmount(appt.sessionCost)   ?? 0);
+      const pa = updates.paymentAmount !== undefined ? (updates.paymentAmount ?? 0) : (toAmount(appt.paymentAmount) ?? 0);
+      updates.remainingBalance = Math.max(sc - pa, 0);
+    }
+
+    // Actualizar (los hooks del modelo ajustan completedAt si cambia status)
+    await appt.update(updates);
+    await appt.reload();
+
+    return res.json(toAppointmentDTO(appt));
   } catch (error) {
-    console.error('[updateAppointment] Error al actualizar cita:', error);
-    console.error('[updateAppointment] Stack trace:', error.stack);
-    res.status(500).json({ message: 'Error al actualizar cita', error: error.message });
+    console.error('[updateAppointment] Error:', error);
+    return res.status(500).json({ message: 'Error al actualizar cita', error: error.message });
   }
 };
 
 const deleteAppointment = async (req, res) => {
   try {
-    console.log('[deleteAppointment] Iniciando eliminación de cita');
     const { id } = req.params;
-    
-    console.log('[deleteAppointment] ID de cita:', id);
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    
-    const appointmentIndex = appointments.findIndex(a => a.id === id);
-    console.log('[deleteAppointment] Índice de cita encontrada:', appointmentIndex);
-    
-    if (appointmentIndex === -1) {
-      console.log('[deleteAppointment] Cita no encontrada');
+
+    const appt = await Appointment.findByPk(id);
+    if (!appt || appt.active === false) {
       return res.status(404).json({ message: 'Cita no encontrada' });
     }
 
-    // Guardar la información de la cita antes de eliminarla
-    const deletedAppointment = appointments[appointmentIndex];
-    console.log('[deleteAppointment] Cita a eliminar:', deletedAppointment);
+    await appt.update({ active: false });
+    await appt.reload();
 
-    // Eliminar la cita del array
-    appointments.splice(appointmentIndex, 1);
-    
-    console.log('[deleteAppointment] Guardando cambios en archivo');
-    await fs.writeFile(APPOINTMENTS_FILE, JSON.stringify({ appointments }, null, 2));
-    
-    console.log('[deleteAppointment] Cita eliminada exitosamente');
-    res.json({ 
+    return res.json({
       message: 'Cita eliminada correctamente',
-      appointment: deletedAppointment 
+      appointment: toAppointmentDTO(appt),
     });
   } catch (error) {
     console.error('[deleteAppointment] Error al eliminar cita:', error);
-    console.error('[deleteAppointment] Stack trace:', error.stack);
-    res.status(500).json({ 
+    return res.status(500).json({
       message: 'Error al eliminar la cita',
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -259,53 +309,70 @@ const getAvailableSlots = async (req, res) => {
   try {
     const { professionalId } = req.params;
     const { date } = req.query;
-    
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    
-    // Obtener todas las citas del profesional para la fecha
-    const dayAppointments = appointments.filter(a => 
-      a.professionalId === professionalId &&
-      a.date === date &&
-      a.status !== 'cancelled'
-    );
-    
-    // Generar todos los slots disponibles (9:00 - 17:00)
-    const allSlots = Array.from({ length: 9 }, (_, i) => {
-      const hour = i + 9;
-      return `${hour.toString().padStart(2, '0')}:00`;
+
+    if (!professionalId || !date) {
+      return res.status(400).json({ message: 'professionalId y date son requeridos' });
+    }
+
+    // Traer citas activas del profesional para ese día (excepto canceladas)
+    const dayAppointments = await Appointment.findAll({
+      where: {
+        active: true,
+        professionalId,
+        date,
+        status: { [Op.ne]: 'cancelled' },
+      },
+      attributes: ['startTime', 'endTime'],
+      order: [['startTime', 'ASC']],
     });
-    
-    // Filtrar slots ocupados
-    const availableSlots = allSlots.filter(slot => 
-      !dayAppointments.some(a => a.startTime === slot)
-    );
-    
-    res.json({ slots: availableSlots });
+
+    // Generar slots de 60 min entre 09:00 y 17:00 (inclusive 17:00 como en tu implementación original)
+    const allSlots = Array.from({ length: 9 }, (_, i) => fmt(9 + i)); // 09:00 ... 17:00
+    const SLOT_MINUTES = 60;
+
+    const availableSlots = allSlots.filter((slot) => {
+      const sStart = toMinutes(slot);
+      const sEnd = sStart + SLOT_MINUTES;
+
+      // Excluir si solapa con alguna cita existente
+      const overlaps = dayAppointments.some((a) => {
+        const aStart = toMinutes(a.startTime);
+        const aEnd = toMinutes(a.endTime);
+        // solapan si el inicio del slot es antes del fin de la cita y
+        // el inicio de la cita es antes del fin del slot
+        return sStart < aEnd && aStart < sEnd;
+      });
+
+      return !overlaps;
+    });
+
+    return res.json({ slots: availableSlots });
   } catch (error) {
     console.error('Error al obtener slots disponibles:', error);
-    res.status(500).json({ message: 'Error al obtener slots disponibles' });
+    return res.status(500).json({ message: 'Error al obtener slots disponibles' });
   }
 };
 
 const getUpcomingAppointments = async (req, res) => {
   try {
-    const data = await fs.readFile(APPOINTMENTS_FILE, 'utf8');
-    const { appointments } = JSON.parse(data);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const appts = await Appointment.findAll({
+      where: {
+        active: true,
+        status: 'scheduled',
+        // Fecha >= hoy (según la BD)
+        date: { [Op.gte]: fn('CURRENT_DATE') },
+      },
+      order: [
+        ['date', 'ASC'],
+        ['startTime', 'ASC'],
+        ['createdAt', 'ASC'],
+      ],
+    });
 
-    const upcomingAppointments = appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
-      appointmentDate.setHours(0, 0, 0, 0);
-      return appointmentDate >= today && appointment.status === 'scheduled';
-    }).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    res.json({ appointments: upcomingAppointments });
+    return res.json({ appointments: toAppointmentDTOList(appts) });
   } catch (error) {
     console.error('Error al obtener citas próximas:', error);
-    res.status(500).json({ message: 'Error al obtener citas próximas' });
+    return res.status(500).json({ message: 'Error al obtener citas próximas' });
   }
 };
 

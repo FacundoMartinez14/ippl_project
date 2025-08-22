@@ -1,32 +1,23 @@
-const fs = require('fs').promises;
-const path = require('path');
-const Activity = require('../data/models/Activity');
-
-const ACTIVITIES_FILE = path.join(__dirname, '../data/activities.json');
-
-// Helper function to read activities
-async function readActivities() {
-  try {
-    const data = await fs.readFile(ACTIVITIES_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
-}
-
-// Helper function to write activities
-async function writeActivities(activities) {
-  await fs.writeFile(ACTIVITIES_FILE, JSON.stringify(activities, null, 2));
-}
+const { Activity } = require('../../models');
+const { toActivityDTO, toActivityDTOList } = require('../../mappers/ActivityMapper');
 
 // Crear una nueva actividad
 async function createActivity(type, title, description, metadata = {}) {
   try {
-    const activities = await readActivities();
-    const newActivity = new Activity(type, title, description, metadata);
-    activities.unshift(newActivity); // Agregar al inicio para mostrar las más recientes primero
-    await writeActivities(activities);
-    return newActivity;
+    const patientId = metadata?.patientId ?? null;
+    const professionalId = metadata?.professionalId ?? null;
+
+    const created = await Activity.create({
+      type,
+      title,
+      description,
+      metadata,
+      occurredAt: new Date(),
+      patientId,
+      professionalId,
+    });
+
+    return toActivityDTO(created);
   } catch (error) {
     console.error('Error creating activity:', error);
     throw error;
@@ -36,8 +27,7 @@ async function createActivity(type, title, description, metadata = {}) {
 // Obtener todas las actividades
 async function getActivities(req, res) {
   try {
-    const activities = await readActivities();
-    // Filtrar actividades relevantes para notificaciones del sistema
+    // Incluyo ambos sufijos por compatibilidad: REQUEST vs REQUESTED
     const relevantTypes = [
       'PATIENT_DISCHARGE_REQUEST',
       'PATIENT_ACTIVATION_REQUEST',
@@ -47,8 +37,18 @@ async function getActivities(req, res) {
       'FREQUENCY_CHANGE_APPROVED',
       'FREQUENCY_CHANGE_REJECTED'
     ];
-    const systemNotifications = activities.filter(activity => relevantTypes.includes(activity.type));
-    res.json(systemNotifications);
+
+    const activities = await Activity.findAll({
+      where: { type: relevantTypes },
+      order: [['occurredAt', 'DESC']],
+      // Opcional: limit/offset vía querystring si lo necesitas
+      // limit: Number(req.query.limit) || 100,
+      // offset: Number(req.query.offset) || 0,
+    });
+
+    // Devolvemos array (igual que antes), pero mapeado a DTO
+    console.log(activities);
+    res.json(toActivityDTOList(activities));
   } catch (error) {
     console.error('Error getting activities:', error);
     res.status(500).json({ error: 'Error al obtener las actividades' });
@@ -58,16 +58,11 @@ async function getActivities(req, res) {
 // Marcar una actividad como leída
 async function markAsRead(req, res) {
   try {
-    const { id } = req.params;
-    const activities = await readActivities();
-    const activityIndex = activities.findIndex(a => a._id === id);
-    
-    if (activityIndex === -1) {
-      return res.status(404).json({ error: 'Actividad no encontrada' });
-    }
+    const { id } = req.params; // el cliente envía _id como string; acá usamos la PK "id"
+    const activity = await Activity.findByPk(id);
+    if (!activity) return res.status(404).json({ error: 'Actividad no encontrada' });
 
-    activities[activityIndex].read = true;
-    await writeActivities(activities);
+    if (!activity.read) await activity.update({ read: true });
     res.json({ success: true });
   } catch (error) {
     console.error('Error marking activity as read:', error);
@@ -78,9 +73,7 @@ async function markAsRead(req, res) {
 // Marcar todas las actividades como leídas
 async function markAllAsRead(req, res) {
   try {
-    const activities = await readActivities();
-    const updatedActivities = activities.map(activity => ({ ...activity, read: true }));
-    await writeActivities(updatedActivities);
+    await Activity.update({ read: true }, { where: { read: false } });
     res.json({ success: true });
   } catch (error) {
     console.error('Error marking all activities as read:', error);
@@ -91,8 +84,9 @@ async function markAllAsRead(req, res) {
 // Obtener el conteo de actividades no leídas
 async function getUnreadCount(req, res) {
   try {
-    const activities = await readActivities();
-    const count = activities.filter(activity => !activity.read).length;
+    const count = await Activity.count({
+      where: { read: false, type: { [Op.in]: CLIENT_ACTIVITY_TYPES } },
+    });
     res.json({ count });
   } catch (error) {
     console.error('Error getting unread count:', error);
@@ -103,13 +97,14 @@ async function getUnreadCount(req, res) {
 // Limpiar todas las actividades
 async function clearAllActivities(req, res) {
   try {
-    await writeActivities([]);
+    await Activity.destroy({ where: {} });
     res.json({ success: true, message: 'Todas las actividades han sido eliminadas' });
   } catch (error) {
     console.error('Error clearing activities:', error);
     res.status(500).json({ error: 'Error al limpiar las actividades' });
   }
 }
+
 
 module.exports = {
   createActivity,

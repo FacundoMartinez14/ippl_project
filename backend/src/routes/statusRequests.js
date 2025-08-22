@@ -8,7 +8,6 @@ const {
   getProfessionalRequests,
   approveRequest,
   rejectRequest,
-  requestFrequencyChange
 } = require('../controllers/statusRequestController');
 
 // Todas las rutas requieren autenticación
@@ -17,7 +16,6 @@ router.use(verifyToken);
 // Rutas para profesionales
 router.get('/professional/:professionalId', authenticateToken, checkRole(['professional']), getProfessionalRequests);
 router.post('/status-change', authenticateToken, checkRole(['professional']), createRequest);
-router.post('/frequency-change/:patientId', authenticateToken, checkRole(['professional']), requestFrequencyChange);
 
 // Rutas para admin
 router.get('/pending', authenticateToken, checkRole(['admin']), getPendingRequests);

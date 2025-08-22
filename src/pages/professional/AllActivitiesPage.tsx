@@ -9,18 +9,9 @@ import {
 } from '@heroicons/react/24/outline';
 import activityService from '../../services/activity.service';
 import { useAuth } from '../../context/AuthContext';
+import type { Activity } from '../../types/Activity';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-
-interface Activity {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  data: any;
-  createdAt: string;
-  read: boolean;
-}
 
 const AllActivitiesPage = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -39,7 +30,7 @@ const AllActivitiesPage = () => {
       // Filtrar actividades relevantes para el profesional
       const filteredActivities = data.filter(activity => {
         // Solo mostrar actividades relacionadas con el profesional actual
-        if (activity.data?.professionalId && activity.data.professionalId !== user?.id) {
+        if (activity.metadata?.professionalId && activity.metadata.professionalId !== user?.id) {
           return false;
         }
         // Tipos de actividades a mostrar
@@ -143,7 +134,7 @@ const AllActivitiesPage = () => {
           <div className="space-y-4">
             {activities.map((activity) => (
               <div
-                key={activity.id}
+                key={activity._id}
                 className={`flex items-start space-x-4 p-4 rounded-lg ${getActivityColor(activity.type)}`}
               >
                 <div className="flex-shrink-0">
@@ -156,13 +147,13 @@ const AllActivitiesPage = () => {
                   <p className="text-sm text-gray-500">
                     {activity.description}
                   </p>
-                  {activity.data?.adminResponse && (
+                  {activity.metadata?.adminResponse && (
                     <p className="mt-1 text-sm text-gray-600 italic">
-                      Respuesta: {activity.data.adminResponse}
+                      Respuesta: {activity.metadata.adminResponse}
                     </p>
                   )}
                   <p className="mt-1 text-xs text-gray-400">
-                    {formatDate(activity.createdAt)}
+                    {formatDate(activity.date)}
                   </p>
                 </div>
               </div>

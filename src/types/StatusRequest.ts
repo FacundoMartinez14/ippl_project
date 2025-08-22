@@ -4,8 +4,8 @@ export interface StatusRequest {
   patientName: string;
   professionalId: string;
   professionalName: string;
-  currentStatus: 'active' | 'pending' | 'inactive' | 'absent';
-  requestedStatus: 'active' | 'pending' | 'inactive' | 'absent';
+  currentStatus: 'active' | 'pending' | 'inactive' | 'absent' ;
+  requestedStatus: 'active' | 'pending' | 'inactive' | 'absent' | 'alta';
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;

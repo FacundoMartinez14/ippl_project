@@ -1,9 +1,9 @@
-const fs = require('fs').promises;
-const path = require('path');
-const MedicalHistory = require('../data/models/MedicalHistory');
-const { v4: uuidv4 } = require('uuid');
-
-const MEDICAL_HISTORY_FILE = path.join(__dirname, '../data/medical-histories.json');
+'use strict';
+const { MedicalHistory, Patient, User } = require('../../models');
+const {
+  toMedicalHistoryDTO,
+  toMedicalHistoryDTOList,
+} = require('../../mappers/MedicalHistoryMapper');
 
 // Asegurarse de que el archivo existe
 const initializeDatabase = async () => {
@@ -19,123 +19,125 @@ const initializeDatabase = async () => {
 // Inicializar la base de datos al cargar el controlador
 initializeDatabase().catch(console.error);
 
-const getMedicalHistories = async (req, res) => {
+// Lista historiales filtrando por patientId o professionalId (vía params o query).
+// Respuesta: { histories: MedicalHistoryDTO[] }
+async function getMedicalHistories(req, res) {
   try {
-    const data = await fs.readFile(MEDICAL_HISTORY_FILE, 'utf8');
-    const histories = JSON.parse(data);
-    
-    // Si viene de la ruta /patient/:patientId
-    if (req.params.patientId) {
-      const patientHistories = histories.filter(h => h.patientId === req.params.patientId);
-      return res.json(patientHistories);
-    }
-    
-    // Si viene de la ruta /professional/:professionalId
-    if (req.params.professionalId) {
-      const professionalHistories = histories.filter(h => h.professionalId === req.params.professionalId);
-      return res.json(professionalHistories);
-    }
-    
-    // Si se proporciona un patientId como query parameter
-    if (req.query.patientId) {
-      const patientHistories = histories.filter(h => h.patientId === req.query.patientId);
-      return res.json(patientHistories);
-    }
-    
-    // Si se proporciona un professionalId como query parameter
-    if (req.query.professionalId) {
-      const professionalHistories = histories.filter(h => h.professionalId === req.query.professionalId);
-      return res.json(professionalHistories);
-    }
-    
-    res.json(histories);
-  } catch (error) {
-    console.error('Error al obtener los historiales médicos:', error);
-    res.status(500).json({ message: 'Error al obtener los historiales médicos' });
-  }
-};
+    // Permite ambos orígenes
+    const patientId =
+      req.params.patientId ?? req.query.patientId ?? undefined;
 
-const getMedicalHistoryById = async (req, res) => {
+    const professionalId =
+      req.params.professionalId ?? req.query.professionalId ?? undefined;
+
+    if (!patientId && !professionalId) {
+      return res.status(400).json({
+        message: 'Debe proporcionar patientId o professionalId (params o query)',
+      });
+    }
+
+    const where = {};
+    if (patientId) where.patientId = patientId;
+    if (professionalId) where.professionalId = professionalId;
+
+    const histories = await MedicalHistory.findAll({
+      where,
+      order: [
+        ['date', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json({ histories: toMedicalHistoryDTOList(histories) });
+  } catch (error) {
+    console.error('[getMedicalHistories] Error:', error);
+    return res.status(500).json({ message: 'Error al obtener historiales médicos' });
+  }
+}
+
+
+async function getMedicalHistoryById(req, res) {
   try {
-    const data = await fs.readFile(MEDICAL_HISTORY_FILE, 'utf8');
-    const histories = JSON.parse(data);
-    const history = histories.find(h => h.id === req.params.id);
-    
-    if (!history) {
+    const { id } = req.params;
+    const mh = await MedicalHistory.findByPk(id);
+    if (!mh) {
       return res.status(404).json({ message: 'Historial médico no encontrado' });
     }
-    
-    res.json(history);
+    return res.json(toMedicalHistoryDTO(mh));
   } catch (error) {
-    console.error('Error al obtener el historial médico:', error);
-    res.status(500).json({ message: 'Error al obtener el historial médico' });
+    console.error('[getMedicalHistoryById] Error:', error);
+    return res.status(500).json({ message: 'Error al obtener historial médico' });
   }
-};
+}
 
-const createMedicalHistory = async (req, res) => {
+async function createMedicalHistory(req, res) {
   try {
     const { patientId, date, diagnosis, treatment, notes } = req.body;
-    const professionalId = req.user.id; // Asumiendo que el ID del profesional viene del token
 
-    const newHistory = new MedicalHistory(
-      uuidv4(),
+    // Validaciones básicas
+    if (!patientId || !date || !diagnosis || !treatment || !notes) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    // Verificar que el paciente exista
+    const patient = await Patient.findByPk(patientId, { attributes: ['id'] });
+    if (!patient) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
+
+    // Profesional (si estás autenticando, suele venir en req.user)
+    const professionalId = req.user?.id ?? null;
+
+    const created = await MedicalHistory.create({
       patientId,
-      date,
+      professionalId,
+      date,        // YYYY-MM-DD (DATEONLY)
       diagnosis,
       treatment,
       notes,
-      professionalId
-    );
+    });
 
-    const data = await fs.readFile(MEDICAL_HISTORY_FILE, 'utf8');
-    const histories = JSON.parse(data);
-    histories.push(newHistory);
-    
-    await fs.writeFile(MEDICAL_HISTORY_FILE, JSON.stringify(histories, null, 2));
-    
-    res.status(201).json(newHistory);
+    return res.status(201).json(toMedicalHistoryDTO(created));
   } catch (error) {
-    console.error('Error al crear el historial médico:', error);
-    res.status(500).json({ message: 'Error al crear el historial médico' });
+    console.error('[createMedicalHistory] Error:', error);
+    return res.status(500).json({ message: 'Error al crear historial médico' });
   }
-};
+}
 
-const updateMedicalHistory = async (req, res) => {
+
+// Actualiza diagnosis/treatment/notes (UpdateMedicalHistoryDto)
+async function updateMedicalHistory(req, res) {
   try {
+    const { id } = req.params;
     const { diagnosis, treatment, notes } = req.body;
-    const historyId = req.params.id;
 
-    const data = await fs.readFile(MEDICAL_HISTORY_FILE, 'utf8');
-    const histories = JSON.parse(data);
-    
-    const historyIndex = histories.findIndex(h => h.id === historyId);
-    
-    if (historyIndex === -1) {
+    const mh = await MedicalHistory.findByPk(id);
+    if (!mh) {
       return res.status(404).json({ message: 'Historial médico no encontrado' });
     }
 
-    // Verificar que el profesional que intenta actualizar es el mismo que lo creó
-    if (req.user.role !== 'admin' && histories[historyIndex].professionalId !== req.user.id) {
-      return res.status(403).json({ message: 'No tienes permiso para modificar este historial' });
+    // Autorización simple: autor (professionalId) o admin
+    const isAdmin = req.user?.role === 'admin';
+    const isAuthor = req.user && String(req.user.id) === String(mh.professionalId ?? '');
+    if (!isAdmin && !isAuthor) {
+      return res.status(403).json({ message: 'No autorizado para editar este historial' });
     }
 
-    // Actualizar solo los campos proporcionados
-    histories[historyIndex] = {
-      ...histories[historyIndex],
-      diagnosis: diagnosis || histories[historyIndex].diagnosis,
-      treatment: treatment || histories[historyIndex].treatment,
-      notes: notes || histories[historyIndex].notes,
-      updatedAt: new Date().toISOString()
-    };
+    const updates = {};
+    if (diagnosis !== undefined) updates.diagnosis = diagnosis;
+    if (treatment !== undefined) updates.treatment = treatment;
+    if (notes !== undefined) updates.notes = notes;
 
-    await fs.writeFile(MEDICAL_HISTORY_FILE, JSON.stringify(histories, null, 2));
-    
-    res.json(histories[historyIndex]);
+    await mh.update(updates);
+    await mh.reload();
+
+    return res.json(toMedicalHistoryDTO(mh));
   } catch (error) {
-    console.error('Error al actualizar el historial médico:', error);
-    res.status(500).json({ message: 'Error al actualizar el historial médico' });
+    console.error('[updateMedicalHistory] Error:', error);
+    return res.status(500).json({ message: 'Error al actualizar historial médico' });
   }
-};
+}
+
 
 const deleteMedicalHistory = async (req, res) => {
   try {

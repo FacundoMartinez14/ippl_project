@@ -388,7 +388,7 @@ const ProfessionalPatients = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive' | 'absent'>('active');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive' | 'absent' | 'alta'>('active');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [showMedicalHistory, setShowMedicalHistory] = useState(false);
@@ -846,11 +846,13 @@ const ProfessionalPatients = () => {
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Fecha de Asignación</h4>
                 <p className="mt-1 text-sm text-gray-900">
-                  {new Date(selectedPatientForDescription.assignedAt).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {selectedPatientForDescription?.assignedAt
+                    ? new Date(selectedPatientForDescription.assignedAt).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
+                    : 'Sin asignar'}
                 </p>
               </div>
 

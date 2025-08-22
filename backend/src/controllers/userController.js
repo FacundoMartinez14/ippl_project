@@ -1,47 +1,20 @@
+'use strict';
 const bcrypt = require('bcryptjs');
-const fs = require('fs').promises;
-const path = require('path');
+const { User, Abono } = require('../../models');
+const { toUserDTO } = require('../../mappers/UserMapper');
 
-const USERS_FILE = path.join(__dirname, '../data/users.json');
-const ABONOS_FILE = path.join(__dirname, '../data/abonos.json');
-
-// Helper function to read users
-async function readUsers() {
-  try {
-    const data = await fs.readFile(USERS_FILE, 'utf8');
-    return JSON.parse(data).users || [];
-  } catch (error) {
-    return [];
-  }
-}
-
-// Helper function to write users
-async function writeUsers(users) {
-  await fs.writeFile(USERS_FILE, JSON.stringify({ users }, null, 2));
-}
-
-// Helper function to read abonos
-async function readAbonos() {
-  try {
-    const data = await fs.readFile(ABONOS_FILE, 'utf8');
-    return JSON.parse(data).abonos || [];
-  } catch (error) {
-    return [];
-  }
-}
-
-// Helper function to write abonos
-async function writeAbonos(abonos) {
-  await fs.writeFile(ABONOS_FILE, JSON.stringify({ abonos }, null, 2));
+// helper numérico para DECIMAL
+function toAmount(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
 }
 
 // Get all users
 const getUsers = async (req, res) => {
   try {
-    const users = await readUsers();
-    // No enviar las contraseñas al frontend
-    const safeUsers = users.map(({ password, ...user }) => user);
-    res.json({ users: safeUsers });
+    const users = await User.findAll({ order: [['id', 'ASC']] });
+    const dtos = users.map((u) => toUserDTO(u));
+    res.json({ users: dtos });
   } catch (error) {
     console.error('Error getting users:', error);
     res.status(500).json({ message: 'Error al obtener usuarios' });
@@ -51,41 +24,34 @@ const getUsers = async (req, res) => {
 // Create a new user
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, status, commission, saldoTotal, saldoPendiente } = req.body;
 
-    // Validar campos requeridos
     if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'Todos los campos son requeridos' });
+      return res.status(400).json({ message: 'Todos los campos (name, email, password, role) son requeridos' });
     }
 
-    const users = await readUsers();
+    const exists = await User.findOne({ where: { email } });
+    if (exists) return res.status(409).json({ message: 'El email ya está registrado' });
 
-    // Verificar si el email ya existe
-    if (users.some(user => user.email === email)) {
-      return res.status(400).json({ message: 'El email ya está registrado' });
-    }
-
-    // Encriptar la contraseña
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const passwordHashed = await bcrypt.hash(password, salt);
 
-    const newUser = {
-      id: Date.now().toString(),
+    const created = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password: passwordHashed,
       role,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    };
+      status: status ?? 'active',
+      commission: commission ?? null,
+      saldoTotal: saldoTotal ?? null,
+      saldoPendiente: saldoPendiente ?? null,
+    });
 
-    users.push(newUser);
-    await writeUsers(users);
-
-    // No enviar la contraseña en la respuesta
-    const { password: _, ...safeUser } = newUser;
-    res.status(201).json(safeUser);
+    return res.status(201).json(toUserDTO(created));
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ message: 'El email ya está registrado' });
+    }
     console.error('Error creating user:', error);
     res.status(500).json({ message: 'Error al crear usuario' });
   }
@@ -95,32 +61,32 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
-    const users = await readUsers();
-    const userIndex = users.findIndex(user => user.id === id);
 
-    if (userIndex === -1) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-    // Si se está actualizando la contraseña, encriptarla
-    if (updateData.password) {
+    const data = { ...req.body };
+
+    if (Object.prototype.hasOwnProperty.call(data, 'password')) {
+      if (!data.password) {
+        return res.status(400).json({ message: 'La contraseña no puede ser vacía' });
+      }
       const salt = await bcrypt.genSalt(10);
-      updateData.password = await bcrypt.hash(updateData.password, salt);
+      data.password = await bcrypt.hash(data.password, salt);
     }
 
-    users[userIndex] = {
-      ...users[userIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString()
-    };
+    const allowed = ['name', 'email', 'role', 'status', 'password', 'commission', 'saldoTotal', 'saldoPendiente', 'lastLogin'];
+    const payload = {};
+    for (const k of allowed) if (data[k] !== undefined) payload[k] = data[k];
 
-    await writeUsers(users);
+    await user.update(payload);
 
-    // No enviar la contraseña en la respuesta
-    const { password: _, ...safeUser } = users[userIndex];
-    res.json(safeUser);
+    await user.reload();
+    return res.json(toUserDTO(user));
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ message: 'El email ya está registrado' });
+    }
     console.error('Error updating user:', error);
     res.status(500).json({ message: 'Error al actualizar usuario' });
   }
@@ -130,67 +96,90 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const users = await readUsers();
-    const userIndex = users.findIndex(user => user.id === id);
 
-    if (userIndex === -1) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    if (user.status === 'inactive') {
+      return res.json({ message: 'El usuario ya estaba inactivo', user: toUserDTO(user) });
     }
 
-    // Eliminar el usuario completamente
-    users.splice(userIndex, 1);
+    await user.update({ status: 'inactive' });
+    await user.reload();
 
-    await writeUsers(users);
-    res.json({ message: 'Usuario eliminado correctamente' });
+    return res.json({ message: 'Usuario desactivado correctamente', user: toUserDTO(user) });
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Error al eliminar usuario' });
+    res.status(500).json({ message: 'Error al desactivar usuario' });
   }
 };
 
 // Abonar comisión a un profesional
 const abonarComision = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { id } = req.params;
     const { abono } = req.body;
-    if (!abono || isNaN(abono) || abono <= 0) {
+
+    const amount = Number(abono);
+    if (!amount || isNaN(amount) || amount <= 0) {
+      await t.rollback();
       return res.status(400).json({ message: 'Abono inválido' });
     }
-    const users = await readUsers();
-    const userIndex = users.findIndex(user => user.id === id && user.role === 'professional');
-    if (userIndex === -1) {
+
+    // lock para evitar race conditions en saldo
+    const professional = await User.findOne({
+      where: { id, role: 'professional' },
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
+    if (!professional) {
+      await t.rollback();
       return res.status(404).json({ message: 'Profesional no encontrado' });
     }
-    if (!users[userIndex].saldoPendiente) users[userIndex].saldoPendiente = 0;
-    users[userIndex].saldoPendiente += abono;
-    users[userIndex].updatedAt = new Date().toISOString();
-    await writeUsers(users);
 
-    // Guardar abono individual
-    const abonos = await readAbonos();
-    abonos.push({
-      id: Date.now().toString(),
-      professionalId: users[userIndex].id,
-      professionalName: users[userIndex].name,
-      amount: abono,
-      date: new Date().toISOString()
-    });
-    await writeAbonos(abonos);
+    const prevSaldo = toAmount(professional.saldoPendiente);
+    const nextSaldo = +(prevSaldo + amount).toFixed(2);
 
-    res.json({ success: true, saldoPendiente: users[userIndex].saldoPendiente });
+    await professional.update(
+      { saldoPendiente: nextSaldo, updatedAt: new Date() },
+      { transaction: t }
+    );
+
+    await Abono.create(
+      {
+        professionalId: professional.id,
+        professionalName: professional.name, // snapshot
+        amount: amount,
+        date: new Date(),
+      },
+      { transaction: t }
+    );
+
+    await t.commit();
+    return res.json({ success: true, saldoPendiente: nextSaldo });
   } catch (error) {
+    await t.rollback();
     console.error('Error al abonar comisión:', error);
-    res.status(500).json({ message: 'Error al abonar comisión' });
+    return res.status(500).json({ message: 'Error al abonar comisión' });
   }
 };
 
 // Obtener todos los abonos individuales
 const getAbonos = async (req, res) => {
   try {
-    const abonos = await readAbonos();
-    res.json({ abonos });
+    const abonos = await Abono.findAll({
+      order: [
+        ['date', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json({ abonos: toAbonoDTOList(abonos) });
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener abonos' });
+    console.error('Error al obtener abonos:', error);
+    return res.status(500).json({ message: 'Error al obtener abonos' });
   }
 };
 
@@ -201,4 +190,4 @@ module.exports = {
   deleteUser,
   abonarComision,
   getAbonos
-}; 
+};

@@ -8,4 +8,8 @@ function toPatientDTO(source) {
   return new PatientDTO(plain);
 }
 
-module.exports = { toPatientDTO };
+function toPatientDTOList(list) {
+  return list.map(toPatientDTO);
+}
+
+module.exports = { toPatientDTO, toPatientDTOList };
