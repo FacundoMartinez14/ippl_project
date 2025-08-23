@@ -35,6 +35,9 @@ export interface Post {
   publishedAt?: string;
 }
 
+
+export type CreatePostDTO = Partial<Post>
+
 interface PostsResponse {
   posts: Post[];
 }
@@ -228,6 +231,10 @@ class PostsService {
       throw new Error('Error al obtener las estadísticas');
     }
     return response.json();
+  }
+
+  async uploadCarouselImages(formData: FormData) {
+      return "Method not implemented" + formData;
   }
 }
 
