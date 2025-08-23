@@ -164,15 +164,12 @@ const createAppointment = async (req, res) => {
 };
 
 
+// PUT /appointments/:id
 const updateAppointment = async (req, res) => {
   try {
-    const { id } = req.params;
+    // La cita ya viene validada (existe, active=true, permisos OK)
+    const appt = req.appointment;
     const body = req.body;
-
-    const appt = await Appointment.findByPk(id);
-    if (!appt || appt.active === false) {
-      return res.status(404).json({ message: 'Cita no encontrada' });
-    }
 
     // Campos permitidos
     const updates = {};
@@ -203,10 +200,10 @@ const updateAppointment = async (req, res) => {
     }
 
     // Si cambian fecha/hora/profesional → validar (end > start) + solapamientos
-    const newDate  = updates.date          ?? appt.date;
-    const newStart = updates.startTime     ?? appt.startTime;
-    const newEnd   = updates.endTime       ?? appt.endTime;
-    const newProf  = updates.professionalId ?? appt.professionalId;
+    const newDate  = updates.date            ?? appt.date;
+    const newStart = updates.startTime       ?? appt.startTime;
+    const newEnd   = updates.endTime         ?? appt.endTime;
+    const newProf  = updates.professionalId  ?? appt.professionalId;
 
     if (newStart && newEnd && toMinutes(newEnd) <= toMinutes(newStart)) {
       return res.status(400).json({ message: 'endTime debe ser mayor que startTime' });
@@ -234,7 +231,7 @@ const updateAppointment = async (req, res) => {
       const overlaps = sameDay.some(a => {
         const s = toMinutes(a.startTime);
         const e = toMinutes(a.endTime);
-        return nS < e && s < nE;
+        return nS < e && s < nE; // solapamiento
       });
       if (overlaps) {
         return res.status(400).json({ message: 'El horario seleccionado no está disponible' });
@@ -280,28 +277,19 @@ const updateAppointment = async (req, res) => {
   }
 };
 
+
 const deleteAppointment = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const appt = await Appointment.findByPk(id);
-    if (!appt || appt.active === false) {
-      return res.status(404).json({ message: 'Cita no encontrada' });
-    }
-
+    const appt = req.appointment; // ya viene del middleware y está activa
     await appt.update({ active: false });
-    await appt.reload();
 
     return res.json({
       message: 'Cita eliminada correctamente',
-      appointment: toAppointmentDTO(appt),
+      appointment: appt, // devuelve el registro actualizado
     });
   } catch (error) {
-    console.error('[deleteAppointment] Error al eliminar cita:', error);
-    return res.status(500).json({
-      message: 'Error al eliminar la cita',
-      error: error.message,
-    });
+    console.error('[deleteAppointment] Error:', error);
+    return res.status(500).json({ message: 'Error al eliminar la cita' });
   }
 };
 
