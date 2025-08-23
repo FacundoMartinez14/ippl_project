@@ -6,8 +6,6 @@ import {
   PhotoIcon,
   TagIcon,
   DocumentTextIcon,
-  StarIcon,
-  XMarkIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import postsService from '../../services/posts.service';
@@ -24,7 +22,7 @@ const PostEditor = () => {
     excerpt: '',
     section: 'bienestar',
     status: 'draft',
-    thumbnail: null as File | null,
+    thumbnail: null as unknown as File | string | undefined,
     tags: '',
     featured: false,
     seo: {
@@ -131,12 +129,22 @@ const PostEditor = () => {
     try {
       const postData = new FormData();
       // Procesar los datos básicos
-      const { seo, tags, ...basicData } = formData;
-      Object.entries(basicData).forEach(([key, value]) => {
-        if (value !== null) {
-          postData.append(key, value);
-        }
-      });
+      const { seo, tags, thumbnail, ...basicData } = formData;
+
+      for (const [key, value] of Object.entries(basicData)) {
+          if (value === null || value === undefined) continue;
+
+          if (typeof value === 'boolean') {
+            postData.append(key, String(value));
+          } else {
+              postData.append(key, value as string);
+          }
+      }
+
+      if (thumbnail instanceof File) {
+        postData.append('thumbnail', thumbnail);
+      }
+
 
       // Procesar tags como array
       const tagsArray = tags.split(',').map(tag => tag.trim());
@@ -304,7 +312,7 @@ const PostEditor = () => {
               type="checkbox"
               id="featured"
               name="featured"
-              checked={formData.featured === true || formData.featured === 'true'}
+              checked={Boolean(formData.featured)}
               onChange={handleCheckboxChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
