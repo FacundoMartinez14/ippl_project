@@ -2,31 +2,34 @@
 
 const { Appointment } = require('../../models');
 
-module.exports = async function authorizeAppointmentEdit(req, res, next) {
+async function preloadAppointmentForWrite(req, res, next) {
   try {
     const { id } = req.params;
 
-    // Trae solo lo necesario; si usas soft delete con deletedAt, compruébalo aquí
-    const appt = await Appointment.findByPk(id, {
-      attributes: ['id', 'professionalId', 'deletedAt'],
+    // Soft delete: solo citas activas
+    const appointment = await Appointment.findOne({
+      where: { id, active: true },
     });
 
-    if (!appt || appt.deletedAt) {
+    if (!appointment) {
       return res.status(404).json({ message: 'Cita no encontrada' });
     }
 
     const isAdmin = req.user?.role === 'admin';
-    const isOwner = String(req.user?.id) === String(appt.professionalId);
+    const isOwner =
+      String(appointment.professionalId ?? '') === String(req.user?.id ?? '');
 
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ message: 'Acceso denegado' });
     }
 
-    req.appointment = appt;
-
-    return next();
-  } catch (error) {
-    console.error('[authorizeAppointmentEdit] Error:', error);
-    return res.status(500).json({ message: 'Error al verificar permisos' });
+    // Inyectamos la cita para reutilizar en el controller
+    req.appointment = appointment;
+    next();
+  } catch (err) {
+    console.error('[appointmentsAuth] Error en preloadAppointmentForWrite:', err);
+    res.status(500).json({ message: 'Error al verificar permisos' });
   }
-};
+}
+
+module.exports = { preloadAppointmentForWrite };
