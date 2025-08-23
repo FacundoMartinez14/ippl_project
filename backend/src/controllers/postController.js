@@ -22,6 +22,34 @@ function slugify(text) {
     .replace(/-+/g, '-');            // colapsa guiones
 }
 
+function calculateWeeklyVisits(posts) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const lastWeek = Array(7).fill(0);
+
+  for (const post of posts) {
+    const vb = Array.isArray(post.viewedBy) ? post.viewedBy : [];
+
+    for (const v of vb) {
+      // Soporte para { date: string } (formato esperado por el helper original)
+      if (v && typeof v === 'object' && v.date) {
+        const viewDate = new Date(v.date);
+        if (isNaN(viewDate.getTime())) continue;
+        // normalizamos a medianoche
+        viewDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((today - viewDate) / dayMs);
+        if (diffDays >= 0 && diffDays < 7) {
+          lastWeek[6 - diffDays] += 1;
+        }
+      }
+      // Si es string (id) no hay timestamp -> no podemos ubicarlo en la semana: lo ignoramos.
+    }
+  }
+
+  return lastWeek;
+}
+
 const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.findAll({
@@ -217,10 +245,244 @@ const deletePost = async (req, res) => {
   }
 };
 
+// GET /posts/:id  →  Post plano (compat con tu ruta actual)
+const getPostById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const post = await Post.findByPk(id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post no encontrado' });
+    }
+
+    // Ocultamos los soft-deleted a menos que sea admin o autor
+    if (post.active === false) {
+      const isAdmin = req.user?.role === 'admin';
+      const isAuthor = String(post.authorId ?? '') === String(req.user?.id ?? '');
+      if (!isAdmin && !isAuthor) {
+        return res.status(404).json({ message: 'Post no encontrado' });
+      }
+    }
+
+    return res.json(toPostDTO(post)); // respuesta plana
+  } catch (error) {
+    console.error('Error al obtener post por id:', error);
+    return res.status(500).json({ message: 'Error al obtener el post' });
+  }
+};
+
+const checkPostViewed = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = String(req.user?.id ?? '');
+
+    const post = await Post.findByPk(id, {
+      attributes: ['id', 'authorId', 'active', 'viewedBy'],
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post no encontrado' });
+    }
+
+    // Ocultar soft-deleted para no admin/no autor
+    if (post.active === false) {
+      const isAdmin = req.user?.role === 'admin';
+      const isAuthor = String(post.authorId ?? '') === userId;
+      if (!isAdmin && !isAuthor) {
+        return res.status(404).json({ message: 'Post no encontrado' });
+      }
+    }
+
+    const viewedArr = Array.isArray(post.viewedBy) ? post.viewedBy : [];
+    const isViewed = viewedArr.map(String).includes(userId);
+
+    return res.json({ isViewed });
+  } catch (error) {
+    console.error('Error al verificar vista:', error);
+    return res.status(500).json({ message: 'Error al verificar la vista' });
+  }
+};
+
+const incrementPostView = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = String(req.user.id);
+
+    const result = await sequelize.transaction(async (t) => {
+      // lock de fila para evitar condiciones de carrera al actualizar views/viewedBy
+      const post = await Post.findByPk(id, {
+        attributes: ['id', 'active', 'views', 'viewedBy'],
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
+
+      if (!post || post.active === false) {
+        const err = new Error('Post no encontrado');
+        err.status = 404;
+        throw err;
+      }
+
+      const viewedBy = Array.isArray(post.viewedBy)
+        ? post.viewedBy.map(String)
+        : [];
+
+      let isViewed = viewedBy.includes(userId);
+
+      if (!isViewed) {
+        viewedBy.push(userId);
+        post.viewedBy = viewedBy;
+        post.views = (post.views || 0) + 1;
+        await post.save({ transaction: t });
+        isViewed = true;
+      }
+
+      return { views: post.views, isViewed };
+    });
+
+    return res.json(result);
+  } catch (error) {
+    if (error.status === 404) {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error('Error al incrementar vista:', error);
+    return res.status(500).json({ message: 'Error al incrementar la vista' });
+  }
+};
+
+const togglePostLike = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = String(req.user.id);
+
+    const result = await sequelize.transaction(async (t) => {
+      const post = await Post.findByPk(id, {
+        attributes: ['id', 'active', 'likes', 'likedBy'],
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
+
+      if (!post || post.active === false) {
+        const err = new Error('Post no encontrado');
+        err.status = 404;
+        throw err;
+      }
+
+      const likedBy = Array.isArray(post.likedBy)
+        ? post.likedBy.map(String)
+        : [];
+
+      const idx = likedBy.indexOf(userId);
+      let isLiked;
+
+      if (idx === -1) {
+        // no estaba likeado → agregar
+        likedBy.push(userId);
+        post.likedBy = likedBy;
+        post.likes = (post.likes || 0) + 1;
+        isLiked = true;
+      } else {
+        // ya estaba likeado → quitar
+        likedBy.splice(idx, 1);
+        post.likedBy = likedBy;
+        post.likes = Math.max((post.likes || 1) - 1, 0);
+        isLiked = false;
+      }
+
+      await post.save({ transaction: t });
+      return { likes: post.likes, isLiked };
+    });
+
+    return res.json(result);
+  } catch (error) {
+    if (error.status === 404) {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error('Error al gestionar like:', error);
+    return res.status(500).json({ message: 'Error al gestionar el like' });
+  }
+};
+
+const checkPostLike = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = String(req.user.id);
+
+    const post = await Post.findByPk(id, {
+      attributes: ['id', 'active', 'likedBy'],
+    });
+
+    if (!post || post.active === false) {
+      return res.status(404).json({ message: 'Post no encontrado' });
+    }
+
+    const likedBy = Array.isArray(post.likedBy)
+      ? post.likedBy.map(String)
+      : [];
+
+    const isLiked = likedBy.includes(userId);
+
+    return res.json({ isLiked });
+  } catch (error) {
+    console.error('Error al verificar like:', error);
+    return res.status(500).json({ message: 'Error al verificar el like' });
+  }
+};
+
+const getPostsStats = async (req, res) => {
+  try {
+    // Traemos sólo lo que necesitamos
+    const posts = await Post.findAll({
+      where: { active: true },
+      attributes: ['views', 'likes', 'viewedBy'],
+      raw: true,
+    });
+
+    const users = await User.findAll({
+      attributes: ['role', 'status'],
+      raw: true,
+    });
+
+    const totalPosts  = posts.length;
+    const totalViews  = posts.reduce((sum, p) => sum + (p.views || 0), 0);
+    const totalLikes  = posts.reduce((sum, p) => sum + (p.likes || 0), 0);
+    const totalVisits = totalViews; // compat con el legacy
+
+    const activeDoctors = users.filter(
+      u => u.role === 'professional' && u.status === 'active'
+    ).length;
+
+    // En el legacy: activeUsers = !isDoctor. Aquí: todos los activos que NO son 'professional'.
+    const activeUsers = users.filter(
+      u => u.role !== 'professional' && u.status === 'active'
+    ).length;
+
+    const weeklyVisits = calculateWeeklyVisits(posts);
+
+    return res.json({
+      totalVisits,
+      activeUsers,
+      activeDoctors,
+      totalPosts,
+      totalLikes,
+      totalViews,
+      weeklyVisits,
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas:', error);
+    return res.status(500).json({ message: 'Error al obtener estadísticas' });
+  }
+};
+
 module.exports = {
   getAllPosts,
   getPostBySlug,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  getPostById,
+  checkPostViewed,
+  incrementPostView,
+  togglePostLike,
+  checkPostLike,
+  getPostsStats
 }; 
