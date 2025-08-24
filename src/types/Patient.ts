@@ -20,4 +20,5 @@ export interface Patient {
     status: string;
   };
   audioNote?: string;
+  sessionFrequency: 'weekly' | 'biweekly' | 'monthly';
 } 

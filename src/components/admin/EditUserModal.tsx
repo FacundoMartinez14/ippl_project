@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { User, UpdateUserData } from '../../services/user.service';
+import {User, UpdateUserData, Roles, Status} from '../../services/user.service';
 
 interface EditUserModalProps {
   user: User;
@@ -100,7 +100,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as Roles })}
             >
               <option value="professional">Psicólogo</option>
               <option value="content_manager">Editor de contenido</option>
@@ -117,7 +117,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as Status })}
             >
               <option value="active">Activo</option>
               <option value="inactive">Inactivo</option>

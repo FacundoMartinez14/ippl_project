@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PlusIcon, TrashIcon, PencilIcon, MicrophoneIcon, EyeIcon, CheckCircleIcon, XCircleIcon, ClockIcon, DocumentTextIcon, UserPlusIcon, BellIcon, MagnifyingGlassIcon, ArrowUpCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, MicrophoneIcon, EyeIcon, ClockIcon, DocumentTextIcon, UserPlusIcon, BellIcon, MagnifyingGlassIcon, ArrowUpCircleIcon } from '@heroicons/react/24/outline';
 import patientsService, { AssignPatientDTO, CreatePatientDTO } from '../../services/patients.service';
 import { Patient } from '../../types/Patient';
 import userService from '../../services/user.service';
@@ -7,11 +7,7 @@ import statusRequestService from '../../services/statusRequest.service';
 import { StatusRequest } from '../../types/StatusRequest';
 import toast from 'react-hot-toast';
 import Modal from '../Modal';
-import MedicalHistoryList from './MedicalHistoryList';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../../config/config';
-import { useAuth } from '../../context/AuthContext';
 import frequencyRequestService, { FrequencyRequest } from '../../services/frequencyRequest.service';
 
 interface Professional {
@@ -693,6 +689,8 @@ const getFrequencyLabel = (freq: string | undefined) => {
   }
 };
 
+type PatientManagementStatus = 'all' | 'active' | 'pending' | 'inactive' | 'absent';
+
 const PatientManagement = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
@@ -703,15 +701,11 @@ const PatientManagement = () => {
   const [isViewDescriptionModalOpen, setIsViewDescriptionModalOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive' | 'absent'>('all');
+  const [statusFilter, setStatusFilter] = useState<PatientManagementStatus>('all');
   const [professionalFilter, setProfessionalFilter] = useState<string>('all');
   const [isStatusRequestModalOpen, setIsStatusRequestModalOpen] = useState(false);
   const [selectedStatusRequest, setSelectedStatusRequest] = useState<StatusRequest | null>(null);
-  const [showMedicalHistory, setShowMedicalHistory] = useState(false);
-  const [selectedPatientForHistory, setSelectedPatientForHistory] = useState<Patient | null>(null);
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'weekly' | 'biweekly' | 'monthly'>('all');
   const [isFrequencyModalOpen, setIsFrequencyModalOpen] = useState(false);
   const [selectedFrequencyRequest, setSelectedFrequencyRequest] = useState<FrequencyRequest | null>(null);
@@ -785,10 +779,6 @@ const PatientManagement = () => {
     }
   };
 
-  const handleDeletePatient = async (patientId: string) => {
-    setPatientToDelete(patientId);
-    setIsDeleteModalOpen(true);
-  };
 
   const confirmDelete = async () => {
     if (!patientToDelete) return;
@@ -979,7 +969,7 @@ const PatientManagement = () => {
           <div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as PatientManagementStatus)}
               className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg"
             >
               <option value="all">Todos los estados</option>
