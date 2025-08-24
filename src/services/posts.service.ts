@@ -232,10 +232,6 @@ class PostsService {
     }
     return response.json();
   }
-
-  async uploadCarouselImages(formData: FormData) {
-      return "Method not implemented" + formData;
-  }
 }
 
 export default new PostsService(); 

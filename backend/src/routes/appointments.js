@@ -33,14 +33,14 @@ router.get('/', (req, res, next) => {
 router.post('/', createAppointment);
 
 router.put('/:id',
-  // authenticateToken,
-  // preloadAppointmentForWrite,
+  authenticateToken,
+  preloadAppointmentForWrite,
   updateAppointment
 );
 
 router.delete('/:id',
-  // authenticateToken,
-  // preloadAppointmentForWrite,
+  authenticateToken,
+  preloadAppointmentForWrite,
   deleteAppointment
 );
 

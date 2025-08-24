@@ -140,7 +140,7 @@ const ContentDashboard = () => {
 
     try {
       // Usamos el servicio de posts que tiene la función de subida
-      await postsService.uploadCarouselImages(formData);
+      // await postsService.uploadCarouselImages(formData); => No implementado
       toast.dismiss();
       toast.success('Imagen subida exitosamente.');
       fetchCarouselImages(); // Refrescar la galería
