@@ -5,20 +5,6 @@ const {
   toMedicalHistoryDTOList,
 } = require('../../mappers/MedicalHistoryMapper');
 
-// Asegurarse de que el archivo existe
-const initializeDatabase = async () => {
-  try {
-    await fs.access(MEDICAL_HISTORY_FILE);
-  } catch (error) {
-    // Si el archivo no existe, créalo con un array vacío
-    await fs.writeFile(MEDICAL_HISTORY_FILE, '[]');
-    console.log('Created medical histories database file');
-  }
-};
-
-// Inicializar la base de datos al cargar el controlador
-initializeDatabase().catch(console.error);
-
 // Lista historiales filtrando por patientId o professionalId (vía params o query).
 // Respuesta: { histories: MedicalHistoryDTO[] }
 async function getMedicalHistories(req, res) {

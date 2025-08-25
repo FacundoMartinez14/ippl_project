@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const appointmentMiddleWare = require('../middleware/appointment');
+const { preloadAppointmentForWrite } = require('../middleware/appointment');
+const { authenticateToken } = require('../middleware/auth');
 const { verifyToken } = require('../controllers/authController');
 const {
   getAllAppointments,
