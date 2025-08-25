@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import postsService, { Post } from '../../services/posts.service';
 import toast from 'react-hot-toast';
 import PostModal from './PostModal';
@@ -11,9 +11,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const ContentManagement = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sectionFilter, setSectionFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | undefined>(undefined);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -49,17 +46,12 @@ const ContentManagement = () => {
     }
   };
 
-  const handleOpenModal = (post?: Post) => {
-    setSelectedPost(post);
-    setIsModalOpen(true);
-  };
-
   const handleCloseModal = () => {
     setSelectedPost(undefined);
     setIsModalOpen(false);
   };
 
-  const handleSavePost = async (postData: Partial<Post>) => {
+  const handleSavePost = async (postData: FormData) => {
     try {
       if (selectedPost) {
         const updatedPost = await postsService.updatePost(selectedPost.id, postData);
@@ -86,11 +78,6 @@ const ContentManagement = () => {
         toast.error('Error al eliminar el post');
       }
     }
-  };
-
-  const handlePostSaved = () => {
-    setEditingPost(null);
-    loadPosts();
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,13 +130,6 @@ const ContentManagement = () => {
       setImageToDelete(null);
     }
   };
-
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSection = !sectionFilter || post.section === sectionFilter;
-    const matchesStatus = !statusFilter || post.status === statusFilter;
-    return matchesSearch && matchesSection && matchesStatus;
-  });
 
   if (isLoading) {
     return (
@@ -271,12 +251,12 @@ const ContentManagement = () => {
         {editingPost ? (
           <div>
             <h3 className="text-xl mb-4 font-semibold text-gray-600">{editingPost.id ? 'Editando Post' : 'Creando Nuevo Post'}</h3>
-            <PostEditor post={editingPost} onSave={handlePostSaved} onCancel={() => setEditingPost(null)} />
+            <PostEditor />
           </div>
         ) : (
           <div>
             <button 
-              onClick={() => setEditingPost({ title: '', content: '', section: 'general', isPublic: false } as Post)} 
+              onClick={() => setEditingPost({title: '', content: '', section: 'general', isPublic: false} as unknown as Post)}
               className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors mb-6 shadow"
             >
               Crear Nuevo Post
@@ -288,7 +268,7 @@ const ContentManagement = () => {
                     <div>
                       <h4 className="font-bold text-lg text-gray-800">{post.title}</h4>
                       <p className="text-sm text-gray-500">
-                        {new Date(post.createdAt).toLocaleDateString()} - <span className={`font-semibold ${post.isPublic ? 'text-green-600' : 'text-yellow-600'}`}>{post.isPublic ? 'Público' : 'Oculto'}</span>
+                        {new Date(post.createdAt).toLocaleDateString()} - <span className={'font-semibold text-green-600'}>Público</span>
                       </p>
                     </div>
                     <div className="flex items-center space-x-3">

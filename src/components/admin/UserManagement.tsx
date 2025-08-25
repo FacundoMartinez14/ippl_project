@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { User, Edit2, Trash2, Search, UserPlus, X } from 'lucide-react';
 import Button from '../common/Button';
-import Card from '../common/Card';
 import userService, { User as UserType, CreateUserData, UpdateUserData } from '../../services/user.service';
 import EditUserModal from './EditUserModal';
 import AddUserModal from './AddUserModal';
@@ -27,7 +26,7 @@ const UserManagement: React.FC = () => {
       const data = await userService.getUsers();
       setUsers(data);
     } catch (error) {
-      toast.error('Error al cargar usuarios');
+      toast.error('Error al cargar usuarios'+"\n"+error);
     }
   };
 
@@ -38,7 +37,7 @@ const UserManagement: React.FC = () => {
       loadUsers();
       setIsAddModalOpen(false);
     } catch (error) {
-      toast.error('Error al crear usuario');
+      toast.error('Error al crear usuario'+"\n"+error);
     }
   };
 
@@ -50,7 +49,7 @@ const UserManagement: React.FC = () => {
       setIsEditModalOpen(false);
       setSelectedUser(null);
     } catch (error) {
-      toast.error('Error al actualizar usuario');
+      toast.error('Error al actualizar usuario'+"\n"+error);
     }
   };
 
@@ -69,22 +68,10 @@ const UserManagement: React.FC = () => {
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
     } catch (error) {
-      toast.error('Error al eliminar usuario');
+      toast.error('Error al eliminar usuario'+"\n"+error);
     }
   };
 
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-800';
-      case 'content_manager':
-        return 'bg-purple-100 text-purple-800';
-      case 'professional':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getRoleLabel = (role: string) => {
     switch (role) {

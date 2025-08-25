@@ -1,11 +1,14 @@
 import api from '../config/api';
 
+export type Roles = 'admin' | 'professional' | 'content_manager' | 'financial';
+export type Status = 'active' | 'inactive';
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'professional' | 'content_manager' | 'financial';
-  status: 'active' | 'inactive';
+  role: Roles;
+  status: Status;
   createdAt: string;
   commission?: number; // porcentaje IPPL
   saldoTotal?: number;

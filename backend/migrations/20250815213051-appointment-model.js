@@ -11,7 +11,7 @@ module.exports = {
       },
 
       patientId: {
-        type: DataTypes.BIGINT,
+        type: Sequelize.BIGINT,
         allowNull: false,
       },
       patientName: {

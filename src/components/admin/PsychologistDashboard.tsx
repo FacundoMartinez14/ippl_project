@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import patientsService, { Patient } from '../../services/patients.service';
+import patientsService from '../../services/patients.service';
 import appointmentsService from '../../services/appointments.service';
 import { Appointment } from '../../types/Appointment';
 import { 
@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../Modal';
 import RecentActivityProfessional from '../professional/RecentActivityProfessional';
+import {Patient} from "../../types/Patient.ts";
 
 const PsychologistDashboard = () => {
   const { user, logout } = useAuth();

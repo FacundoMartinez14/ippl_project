@@ -35,6 +35,9 @@ export interface Post {
   publishedAt?: string;
 }
 
+
+export type CreatePostDTO = Partial<Post>
+
 interface PostsResponse {
   posts: Post[];
 }

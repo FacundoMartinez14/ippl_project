@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import postsService, { Post } from '../../services/posts.service';
@@ -7,20 +7,16 @@ import {
   PencilIcon, 
   TrashIcon, 
   PlusIcon,
-  ChartBarIcon,
   NewspaperIcon,
   TagIcon,
   EyeIcon,
   HeartIcon,
   ArrowPathIcon,
-  FunnelIcon,
   MagnifyingGlassIcon,
-  ArrowUpTrayIcon,
   BookmarkIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import PostModal from './PostModal';
 import contentManagementService from '../../services/content.service';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -35,11 +31,7 @@ const ContentDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<Post | undefined>(undefined);
-  const fileInputRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+  const fileInputRef= useRef<HTMLInputElement | null>(null);
   const [carouselImages, setCarouselImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
@@ -123,60 +115,6 @@ const ContentDashboard = () => {
     }
   };
 
-  const handleCloseModal = () => {
-    setSelectedPost(undefined);
-    setIsModalOpen(false);
-  };
-
-  const handleSavePost = async (postData: any) => {
-    try {
-      if (selectedPost) {
-        const updatedPost = await postsService.updatePost(selectedPost.id, postData);
-        setPosts(posts.map(p => p.id === selectedPost.id ? updatedPost : p));
-        toast.success('Post actualizado correctamente');
-      } else {
-        const newPost = await postsService.createPost(postData);
-        setPosts([newPost, ...posts]);
-        toast.success('Post creado correctamente');
-      }
-      handleCloseModal();
-    } catch (error) {
-      toast.error(selectedPost ? 'Error al actualizar el post' : 'Error al crear el post');
-    }
-  };
-
-  const handleUpload = async (e) => {
-    const file = fileInputRef.current?.files[0];
-    if (!file) {
-      setMessage("Selecciona una imagen primero.");
-      return;
-    }
-    setUploading(true);
-    setMessage("");
-    const formData = new FormData();
-    formData.append("image", file);
-    try {
-      const res = await fetch("/api/upload/carousel", {
-        method: "POST",
-        headers: {
-          // Si usas autenticación por token, agrega aquí el header Authorization
-        },
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessage("Imagen subida exitosamente.");
-        setPreview(null);
-        fileInputRef.current.value = null;
-      } else {
-        setMessage(data.message || "Error al subir la imagen.");
-      }
-    } catch (err) {
-      setMessage("Error de red al subir la imagen.");
-    }
-    setUploading(false);
-  };
-
   const fetchCarouselImages = async () => {
     try {
       const images = await contentManagementService.getCarouselImages();
@@ -188,7 +126,7 @@ const ContentDashboard = () => {
   };
   
   const handleCarouselUpload = async () => {
-    const file = fileInputRef.current?.files[0];
+    const file = fileInputRef.current?.files?.[0];
     if (!file) {
       toast.error("Selecciona una imagen primero.");
       return;
@@ -202,12 +140,12 @@ const ContentDashboard = () => {
 
     try {
       // Usamos el servicio de posts que tiene la función de subida
-      await postsService.uploadCarouselImages(formData);
+      // await postsService.uploadCarouselImages(formData); => No implementado
       toast.dismiss();
       toast.success('Imagen subida exitosamente.');
       fetchCarouselImages(); // Refrescar la galería
       if(fileInputRef.current) {
-        fileInputRef.current.value = null;
+        fileInputRef.current.value = "";
       }
     } catch (err) {
       toast.dismiss();
@@ -627,27 +565,5 @@ const ContentDashboard = () => {
     </div>
   );
 };
-
-interface StatCardProps {
-  title: string;
-  value: number;
-  icon: React.ElementType;
-  color: string;
-  textColor: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, textColor }) => (
-  <div className="bg-white rounded-xl p-6 border border-gray-100">
-    <div className="flex items-center">
-      <div className={`${color} p-3 rounded-lg`}>
-        <Icon className={`h-6 w-6 ${textColor}`} />
-      </div>
-      <div className="ml-4">
-        <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
-        <p className="text-sm text-gray-600">{title}</p>
-      </div>
-    </div>
-  </div>
-);
 
 export default ContentDashboard; 

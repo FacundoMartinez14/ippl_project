@@ -5,7 +5,7 @@ import { Post, CreatePostDTO } from '../../services/posts.service';
 interface PostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (post: CreatePostDTO) => Promise<void>;
+  onSave: (post: FormData) => Promise<void>;
   post?: Post;
 }
 
@@ -40,11 +40,17 @@ const PostModal: React.FC<PostModalProps> = ({ isOpen, onClose, onSave, post }) 
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onSave(formData);
-    onClose();
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const data = new FormData();
+        data.append("title", formData.title ?? "");
+        data.append("content", formData.content ?? "");
+        data.append("section", formData.section ?? "");
+
+        await onSave(data);
+        onClose();
+    };
 
   if (!isOpen) return null;
 
