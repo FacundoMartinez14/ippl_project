@@ -1,5 +1,5 @@
 'use strict';
-const { MedicalHistory, Patient, User } = require('../../models');
+const { MedicalHistory, Patient } = require('../../models');
 const {
   toMedicalHistoryDTO,
   toMedicalHistoryDTOList,

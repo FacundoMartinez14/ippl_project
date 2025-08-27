@@ -1,7 +1,7 @@
 'use strict';
 
 const { Message } = require('../../models');
-const { toMessageDTO, toMessageDTOList } = require('../../mappers/MessageMapper');
+const { toMessageDTOList } = require('../../mappers/MessageMapper');
 
 // Create a new message
 async function createMessage(req, res) {
@@ -13,7 +13,7 @@ async function createMessage(req, res) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
 
-    const created = await Message.create({
+    await Message.create({
       nombre,
       apellido,
       correoElectronico,

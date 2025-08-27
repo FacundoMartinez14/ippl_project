@@ -39,11 +39,14 @@ const EventComponent = ({ event }: any) => {
       </div>
       <div className="text-xs flex items-center gap-1">
         <ClockIcon className="h-3 w-3" />
-        {moment(appointment.date).format('HH:mm')}
+        {moment(event.start).format('HH:mm')}–{moment(event.end).format('HH:mm')}
       </div>
       <div className="text-xs">
-        {appointment.type === 'regular' ? 'Regular' : 
-         appointment.type === 'first_time' ? 'Primera Vez' : 'Emergencia'}
+        {appointment.type === 'regular'
+          ? 'Regular'
+          : appointment.type === 'first_time'
+          ? 'Primera Vez'
+          : 'Emergencia'}
       </div>
     </div>
   );
@@ -54,7 +57,7 @@ const AppointmentsCalendar = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [view, setView] = useState<View>('month');
+  const [view, setView] = useState<View>('week');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,13 +72,22 @@ const AppointmentsCalendar = () => {
       const data = await appointmentsService.getProfessionalAppointments(user.id);
       
       // Convertir las citas al formato que espera el calendario
-      const formattedAppointments = data.map(appointment => ({
+      const formattedAppointments = data.map(appointment => {
+        let start = toLocalDate(appointment.date, appointment.startTime);
+        let end   = toLocalDate(appointment.date, appointment.endTime);
+
+        // Garantizar end > start (y evitar “doble día” por igualdades)
+        if (end <= start) {
+          end = new Date(start.getTime() + 30 * 60 * 1000); // +30 min de respaldo
+        }
+        
+        return {
         id: appointment.id,
         title: appointment.patientName,
-        start: new Date(appointment.date),
-        end: moment(appointment.date).add(1, 'hour').toDate(),
+        start,
+        end,
         resource: appointment
-      }));
+      }});
       
       setAppointments(formattedAppointments);
     } catch (error) {
@@ -85,6 +97,12 @@ const AppointmentsCalendar = () => {
       setIsLoading(false);
     }
   };
+
+  const toLocalDate = (dateStr: string, timeStr: string) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [hh, mm]   = timeStr.split(':').map(Number);
+  return new Date(y, m - 1, d, hh, mm, 0, 0); // <-- local time
+}
 
   const handleSelectEvent = (event: any) => {
     setSelectedAppointment(event.resource);
