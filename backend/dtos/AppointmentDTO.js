@@ -6,6 +6,12 @@ function toIso(value) {
   return isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
+function toNum(v) {
+  if (v === null || v === undefined) return undefined;
+  const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 class AppointmentDTO {
   constructor(src) {
     const a = typeof src.get === 'function' ? src.get({ plain: true }) : src;
@@ -28,10 +34,10 @@ class AppointmentDTO {
     this.notes = a.notes ?? undefined;
     this.audioNote = a.audioNote ?? undefined;
 
-    this.sessionCost = a.sessionCost ?? undefined;
+    this.sessionCost = toNum(a.sessionCost);
     this.attended = a.attended ?? undefined;
-    this.paymentAmount = a.paymentAmount ?? undefined;
-    this.remainingBalance = a.remainingBalance ?? undefined;
+    this.paymentAmount = toNum(a.paymentAmount);
+    this.remainingBalance = toNum(a.remainingBalance);
 
     this.completedAt = toIso(a.completedAt);
     this.createdAt = toIso(a.createdAt);

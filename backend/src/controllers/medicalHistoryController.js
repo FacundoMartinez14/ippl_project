@@ -34,7 +34,7 @@ async function getMedicalHistories(req, res) {
       ],
     });
 
-    return res.json({ histories: toMedicalHistoryDTOList(histories) });
+    return res.json(toMedicalHistoryDTOList(histories));
   } catch (error) {
     console.error('[getMedicalHistories] Error:', error);
     return res.status(500).json({ message: 'Error al obtener historiales médicos' });

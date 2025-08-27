@@ -1,12 +1,6 @@
 import api from '../config/api';
 import { Activity } from '../types/Activity';
 
-interface ActivityLog {
-  type: string;
-  description: string;
-  actor: string;
-}
-
 const activityService = {
   // Obtener todas las actividades
   async getActivities(): Promise<Activity[]> {
@@ -56,14 +50,6 @@ const activityService = {
       console.error('Error clearing activities:', error);
     }
   },
-
-  async logActivity(activity: ActivityLog): Promise<void> {
-    try {
-      await api.post('/activities', activity);
-    } catch (error) {
-      console.error('Error logging activity:', error);
-    }
-  }
 };
 
 export default activityService; 

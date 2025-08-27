@@ -58,12 +58,7 @@ class AppointmentsService {
   async createAppointment(appointmentData: Partial<Appointment>): Promise<Appointment> {
     try {
       const response = await api.post('/appointments', appointmentData);
-      // Registrar la actividad
-      await activityService.logActivity({
-        type: 'new_appointment',
-        description: `Nueva cita programada con ${appointmentData.patientName}`,
-        actor: appointmentData.professionalName || 'Sistema'
-      });
+      console.log(response.data)
       return response.data;
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -74,13 +69,6 @@ class AppointmentsService {
   async updateAppointment(appointmentId: string, appointmentData: Partial<Appointment>): Promise<Appointment> {
     try {
       const response = await api.put(`/appointments/${appointmentId}`, appointmentData);
-      // Registrar la actividad
-      const statusText = appointmentData.status === 'completed' ? 'completada' : 'actualizada';
-      await activityService.logActivity({
-        type: 'appointment_update',
-        description: `Cita ${statusText} con ${appointmentData.patientName}`,
-        actor: appointmentData.professionalName || 'Sistema'
-      });
       return response.data;
     } catch (error) {
       console.error('Error updating appointment:', error);
@@ -100,14 +88,6 @@ class AppointmentsService {
       // Eliminamos la cita
       await api.delete(`/appointments/${appointmentId}`);
 
-      // Registrar la actividad
-      if (appointment) {
-        await activityService.logActivity({
-          type: 'appointment_delete',
-          description: `Cita eliminada con ${appointment.patientName}`,
-          actor: appointment.professionalName || 'Sistema'
-        });
-      }
     } catch (error) {
       console.error('Error deleting appointment:', error);
       throw new Error('No se pudo eliminar la cita. Por favor, inténtalo de nuevo.');
@@ -129,13 +109,6 @@ class AppointmentsService {
   async updateAppointmentStatus(id: string, status: string, appointmentData: any): Promise<any> {
     try {
       const response = await api.put(`/appointments/${id}/status`, { status });
-      // Registrar la actividad
-      const statusText = status === 'completed' ? 'completada' : 'actualizada';
-      await activityService.logActivity({
-        type: 'appointment_update',
-        description: `Cita ${statusText} con ${appointmentData.patientName}`,
-        actor: appointmentData.professionalName || 'Sistema'
-      });
       return response.data;
     } catch (error) {
       console.error('Error al actualizar estado de cita:', error);

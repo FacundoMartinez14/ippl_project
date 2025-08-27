@@ -16,11 +16,8 @@ const MedicalHistoryPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<MedicalHistory | undefined>();
   const [loading, setLoading] = useState(true);
-  const [patientName, setPatientName] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [historyToDelete, setHistoryToDelete] = useState<MedicalHistory | null>(null);
-
-  console.log('MedicalHistoryPage rendered, patientId:', patientId); // Debug log
 
   const loadHistories = async () => {
     if (!patientId) return;

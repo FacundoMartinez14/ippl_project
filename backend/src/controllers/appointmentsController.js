@@ -343,12 +343,16 @@ const getAvailableSlots = async (req, res) => {
 
 const getUpcomingAppointments = async (req, res) => {
   try {
+    const today = new Date();
+    // YYYY-MM-DD para comparar con DATEONLY
+    const yyyyMMdd = today.toISOString().slice(0, 10);
+    
     const appts = await Appointment.findAll({
       where: {
         active: true,
         status: 'scheduled',
         // Fecha >= hoy (según la BD)
-        date: { [Op.gte]: fn('CURRENT_DATE') },
+        date: { [Op.gte]: yyyyMMdd },
       },
       order: [
         ['date', 'ASC'],

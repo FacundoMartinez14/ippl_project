@@ -57,7 +57,6 @@ const medicalHistoryService = {
   // Obtener historiales médicos por paciente
   getPatientMedicalHistories: async (patientId: string) => {
     try {
-      console.log('Fetching medical histories for patient:', patientId);
       const response = await api.get<MedicalHistory[]>(`/medical-history/patient/${patientId}`);
       return response.data;
     } catch (error) {

@@ -101,11 +101,6 @@ class PostsService {
       }
 
       const post = await response.json();
-      await activityService.logActivity({
-        type: 'new_post',
-        description: `Nuevo artículo publicado: "${post.title}"`,
-        actor: post.authorName || 'Sistema'
-      });
       return post;
     } catch (error) {
       console.error('Error al crear post:', error);
@@ -129,11 +124,6 @@ class PostsService {
       }
 
       const post = await response.json();
-      await activityService.logActivity({
-        type: 'post_update',
-        description: `Artículo actualizado: "${post.title}"`,
-        actor: post.authorName || 'Sistema'
-      });
       return post;
     } catch (error) {
       console.error('Error al actualizar post:', error);

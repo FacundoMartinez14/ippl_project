@@ -6,11 +6,15 @@ const {
   markAsRead, 
   markAllAsRead, 
   getUnreadCount,
-  clearAllActivities 
+  clearAllActivities,
+  createActivity
 } = require('../controllers/activityController');
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
+
+// Create activity
+router.post('/', createActivity);
 
 // Obtener todas las actividades
 router.get('/', getActivities);

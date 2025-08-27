@@ -97,12 +97,6 @@ const patientsService = {
   updatePatient: async (id: string, patientData: any): Promise<any> => {
     try {
       const response = await api.put(`/patients/${id}/assign`, patientData);
-      // Registrar la actividad
-      await activityService.logActivity({
-        type: 'patient_update',
-        description: `Paciente actualizado: ${patientData.name}`,
-        actor: patientData.professionalName || 'Sistema'
-      });
       return response.data;
     } catch (error) {
       console.error('Error al actualizar paciente:', error);
@@ -113,12 +107,7 @@ const patientsService = {
   deletePatient: async (id: string): Promise<void> => {
     try {
       await api.delete(`/patients/${id}`);
-      // Registrar la actividad
-      await activityService.logActivity({
-        type: 'patient_delete',
-        description: `Paciente eliminado`,
-        actor: 'Sistema'
-      });
+
     } catch (error) {
       console.error('Error al eliminar paciente:', error);
       throw error;

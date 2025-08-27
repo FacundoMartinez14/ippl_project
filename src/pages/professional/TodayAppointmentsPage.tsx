@@ -80,6 +80,16 @@ const AppointmentsPage = () => {
     }
   };
 
+  const combineLocalDateTime = (dateStr: string, timeStr?: string) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  let hh = 0, mm = 0;
+  if (timeStr) {
+    [hh, mm] = timeStr.split(':').map(Number);
+  }
+  // Date(...) sin zona -> crea un Date en TU zona local
+  return new Date(y, (m - 1), d, hh, mm);
+}
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadAppointments();
@@ -123,6 +133,22 @@ const AppointmentsPage = () => {
       console.error('Error al crear la cita:', error);
       toast.error('Error al crear la cita');
     }
+  };
+
+  const toMinutes = (hhmm: string) => {
+    const [h, m] = (hhmm || '').split(':').map(Number);
+    return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+  };
+
+  const fromMinutes = (mins: number) => {
+    const h = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  };
+
+  const addMinutesToTime = (hhmm: string, minutesToAdd: number) => {
+    const total = toMinutes(hhmm) + minutesToAdd;
+    return fromMinutes(total);
   };
 
   const handleEditAppointment = async (appointmentData: Partial<Appointment>) => {
@@ -348,14 +374,15 @@ const AppointmentsPage = () => {
                         <div className="flex items-center">
                           <ClockIcon className="h-5 w-5 text-gray-400 mr-2" />
                           <span className="text-sm text-gray-900">
-                            {new Date(appointment.date).toLocaleDateString('es-ES', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {combineLocalDateTime(appointment.date, appointment.startTime)
+                              .toLocaleString('es-ES', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                           </span>
                         </div>
                       </td>
@@ -457,6 +484,8 @@ const AppointmentsPage = () => {
               handleCreateAppointment({
                 patientId: formData.get('patientId') as string,
                 date: formData.get('date') as string,
+                startTime: formData.get('startTime') as string,
+                endTime: addMinutesToTime(formData.get('startTime') as string, Number(formData.get('duration') || 60)),
                 type: formData.get('type') as 'regular' | 'first_time' | 'emergency',
                 notes: formData.get('notes') as string,
                 sessionCost: Number(formData.get('sessionCost'))
@@ -487,16 +516,44 @@ const AppointmentsPage = () => {
                   )}
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Fecha y Hora
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="date"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Fecha</label>
+                    <input
+                      type="date"
+                      name="date"
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Hora de inicio</label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      required
+                      step={60}
+                      min="06:00"
+                      max="22:00"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Duración</label>
+                    <select
+                      name="duration"
+                      defaultValue="60"
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">60 min</option>
+                      <option value="90">90 min</option>
+                    </select>
+                  </div>
                 </div>
                 
                 <div>
@@ -595,6 +652,8 @@ const AppointmentsPage = () => {
               const formData = new FormData(e.currentTarget);
               handleEditAppointment({
                 date: formData.get('date') as string,
+                startTime: formData.get('startTime') as string,
+                endTime: addMinutesToTime(formData.get('startTime') as string, Number(formData.get('duration') || 60)),
                 type: formData.get('type') as 'regular' | 'first_time' | 'emergency',
                 notes: formData.get('notes') as string,
                 sessionCost: Number(formData.get('sessionCost'))
@@ -613,17 +672,44 @@ const AppointmentsPage = () => {
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Fecha y Hora
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="date"
-                    required
-                    defaultValue={selectedAppointment.date}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Fecha</label>
+                    <input
+                      type="date"
+                      name="date"
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Hora de inicio</label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      required
+                      step={60}
+                      min="06:00"
+                      max="22:00"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Duración</label>
+                    <select
+                      name="duration"
+                      defaultValue="60"
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">60 min</option>
+                      <option value="90">90 min</option>
+                    </select>
+                  </div>
                 </div>
                 
                 <div>
@@ -725,14 +811,17 @@ const AppointmentsPage = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Fecha y Hora</h3>
                 <p className="mt-1 text-sm text-gray-900">
-                  {new Date(selectedAppointmentForDescription.date).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {combineLocalDateTime(
+                      selectedAppointmentForDescription.date,
+                      selectedAppointmentForDescription.startTime
+                    ).toLocaleString('es-ES', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                 </p>
               </div>
 
@@ -818,14 +907,17 @@ const AppointmentsPage = () => {
                   Fecha y Hora
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {new Date(selectedAppointmentForFinish.date).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {combineLocalDateTime(
+                      selectedAppointmentForFinish.date,
+                      selectedAppointmentForFinish.startTime
+                    ).toLocaleString('es-ES', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                 </p>
               </div>
 
