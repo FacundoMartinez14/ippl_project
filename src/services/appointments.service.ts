@@ -1,6 +1,5 @@
 import api from '../config/api';
 import { Appointment } from '../types/Appointment';
-import activityService from './activity.service';
 
 export interface CreateAppointmentDTO {
   patientId: string;

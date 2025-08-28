@@ -1,18 +1,18 @@
-// src/routes/messages.js
 'use strict';
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireMessageManager, loadMessageById } = require('../middleware/message');
 const messageController = require('../controllers/messageController');
 
 // Ruta pública para enviar mensajes
-router.post('/messages', messageController.createMessage);
+router.post('/', messageController.createMessage);
 
 // Rutas protegidas (requieren autenticación)
-router.get('/messages', authenticateToken, requireMessageManager, messageController.getAllMessages);
+router.get('/', authenticateToken, requireMessageManager, messageController.getAllMessages);
 // Marcar como leído (usa el middleware que precarga el mensaje)
-router.put('/messages/:id/read',
+router.put('/:id/read',
   authenticateToken,
   requireMessageManager,
   loadMessageById,
@@ -20,7 +20,7 @@ router.put('/messages/:id/read',
 );
 
 // Ruta para limpiar todos los mensajes
-router.delete('/messages/clear-all',
+router.delete('/clear-all',
   authenticateToken,
   requireMessageManager,
   messageController.clearAllMessages

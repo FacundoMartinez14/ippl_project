@@ -42,7 +42,7 @@ async function getAllMessages(req, res) {
         ['createdAt', 'DESC'],
       ],
     });
-
+    console.log(rows)
     return res.json(toMessageDTOList(rows));
   } catch (error) {
     console.error('Error al obtener mensajes:', error);

@@ -1,7 +1,5 @@
 import api from './api';
-import { AxiosResponse } from 'axios';
 import { Patient } from '../types/Patient';
-import activityService from './activity.service';
 import { API_URL } from '../config/config';
 import frequencyRequestService, { CreateFrequencyRequestDTO } from './frequencyRequest.service';
 

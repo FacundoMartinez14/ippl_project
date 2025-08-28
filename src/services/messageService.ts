@@ -20,6 +20,7 @@ export const messageService = {
 
   // Get all messages
   async getMessages() {
+    console.log("entre al metodo")
     const response = await axios.get<Message[]>(`${API_URL}/api/messages`);
     return response.data;
   },

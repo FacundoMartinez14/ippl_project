@@ -1,98 +1,203 @@
-const fs = require('fs').promises;
-const path = require('path');
+
+const { Op, fn, col } = require('sequelize');
+const { sequelize, User, Patient, Post, Appointment } = require('../../models');
 
 const getSystemStats = async (req, res) => {
   try {
-    // Leer todos los archivos de datos
-    const usersData = JSON.parse(await fs.readFile(path.join(__dirname, '../data/users.json'), 'utf8'));
-    const patientsData = JSON.parse(await fs.readFile(path.join(__dirname, '../data/patients.json'), 'utf8'));
-    const postsData = JSON.parse(await fs.readFile(path.join(__dirname, '../data/posts.json'), 'utf8'));
+    // ---- Users ----
+    const [totalUsers, activeUsers, admins, pros, cms] = await Promise.all([
+      User.count(),
+      User.count({ where: { status: 'active' } }),
+      User.count({ where: { role: 'admin' } }),
+      User.count({ where: { role: 'professional' } }),
+      User.count({ where: { role: 'content_manager' } }),
+    ]);
 
-    // Calcular estadísticas
-    const stats = {
-      users: {
-        total: usersData.users.length,
-        byRole: {
-          admin: usersData.users.filter(u => u.role === 'admin').length,
-          professional: usersData.users.filter(u => u.role === 'professional').length,
-          content_manager: usersData.users.filter(u => u.role === 'content_manager').length
+    // ---- Patients ----
+    const [totalPatients, activePatients] = await Promise.all([
+      // contamos solo activos (soft-delete = active: true)
+      Patient.count({ where: { active: true } }),
+      Patient.count({ where: { active: true, status: 'active' } }),
+    ]);
+
+    // Pacientes con cita próxima (scheduled y en el futuro)
+    const now = new Date();
+    const patientsWithUpcoming = await Appointment.findAll({
+      attributes: [[fn('DISTINCT', col('patientId')), 'patientId']],
+      where: {
+        active: true,
+        status: 'scheduled',
+        [Op.and]: [
+          // MySQL/MariaDB: fecha+hora > now
+          sequelize.where(fn('TIMESTAMP', col('date'), col('startTime')), { [Op.gt]: now }),
+        ],
+      },
+      raw: true,
+    });
+
+    // Pacientes por profesional (mapa { [professionalId]: count })
+    const byProfessionalRows = await Patient.findAll({
+      attributes: ['professionalId', [fn('COUNT', col('id')), 'count']],
+      where: { active: true, professionalId: { [Op.ne]: null } },
+      group: ['professionalId'],
+      raw: true,
+    });
+    const byProfessional = {};
+    for (const r of byProfessionalRows) {
+      byProfessional[String(r.professionalId)] = parseInt(r.count, 10);
+    }
+
+    // ---- Posts ----
+    const [totalPosts, publishedPosts, viewsAgg, likesAgg, bySectionRows] = await Promise.all([
+      Post.count({ where: { active: true } }),
+      Post.count({ where: { active: true, status: 'published' } }),
+      Post.findAll({
+        attributes: [[fn('SUM', col('views')), 'sumViews']],
+        where: { active: true },
+        raw: true,
+        limit: 1,
+      }),
+      Post.findAll({
+        attributes: [[fn('SUM', col('likes')), 'sumLikes']],
+        where: { active: true },
+        raw: true,
+        limit: 1,
+      }),
+      Post.findAll({
+        attributes: ['section', [fn('COUNT', col('id')), 'count']],
+        where: { active: true },
+        group: ['section'],
+        raw: true,
+      }),
+    ]);
+    const totalViews = parseInt(viewsAgg?.[0]?.sumViews || 0, 10);
+    const totalLikes = parseInt(likesAgg?.[0]?.sumLikes || 0, 10);
+    const bySection = {};
+    for (const r of bySectionRows) {
+      bySection[r.section] = parseInt(r.count, 10);
+    }
+
+    // ---- Appointments (global) ----
+    const [upcomingAppointments, completedAppointments] = await Promise.all([
+      Appointment.count({
+        where: {
+          active: true,
+          status: 'scheduled',
+          [Op.and]: [
+            sequelize.where(fn('TIMESTAMP', col('date'), col('startTime')), { [Op.gt]: now }),
+          ],
         },
-        active: usersData.users.filter(u => u.status === 'active').length
+      }),
+      Appointment.count({
+        where: { active: true, status: 'completed' },
+      }),
+    ]);
+
+    // ---- Respuesta ----
+    return res.json({
+      users: {
+        total: totalUsers,
+        byRole: { admin: admins, professional: pros, content_manager: cms },
+        active: activeUsers,
       },
       patients: {
-        total: patientsData.patients.length,
-        active: patientsData.patients.filter(p => p.status === 'active').length,
-        withAppointments: patientsData.patients.filter(p => p.nextAppointment).length,
-        byProfessional: patientsData.patients.reduce((acc, p) => {
-          if (p.professionalId) {
-            acc[p.professionalId] = (acc[p.professionalId] || 0) + 1;
-          }
-          return acc;
-        }, {})
+        total: totalPatients,
+        active: activePatients,
+        withAppointments: patientsWithUpcoming.length,
+        byProfessional,
       },
       posts: {
-        total: postsData.posts.length,
-        published: postsData.posts.filter(p => p.status === 'published').length,
-        totalViews: postsData.posts.reduce((sum, p) => sum + (p.views || 0), 0),
-        totalLikes: postsData.posts.reduce((sum, p) => sum + (p.likes || 0), 0),
-        bySection: postsData.posts.reduce((acc, p) => {
-          acc[p.section] = (acc[p.section] || 0) + 1;
-          return acc;
-        }, {})
+        total: totalPosts,
+        published: publishedPosts,
+        totalViews,
+        totalLikes,
+        bySection,
       },
       appointments: {
-        upcoming: patientsData.patients.filter(p => p.nextAppointment && new Date(p.nextAppointment) > new Date()).length,
-        completed: patientsData.patients.reduce((sum, p) => 
-          sum + (p.appointments?.filter(a => a.status === 'completed').length || 0), 0
-        )
-      }
-    };
-
-    res.json(stats);
+        upcoming: upcomingAppointments,
+        completed: completedAppointments,
+      },
+    });
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
-    res.status(500).json({ message: 'Error al obtener estadísticas del sistema' });
+    return res.status(500).json({ message: 'Error al obtener estadísticas del sistema' });
   }
 };
 
 const getProfessionalStats = async (req, res) => {
   try {
     const { professionalId } = req.params;
-    const patientsData = JSON.parse(await fs.readFile(path.join(__dirname, '../data/patients.json'), 'utf8'));
+    const now = new Date();
 
-    // Filtrar pacientes del profesional
-    const professionalPatients = patientsData.patients.filter(p => p.professionalId === professionalId);
+    // Pacientes del profesional
+    const [total, activeCount] = await Promise.all([
+      Patient.count({ where: { active: true, professionalId } }),
+      Patient.count({ where: { active: true, professionalId, status: 'active' } }),
+    ]);
 
-    const stats = {
+    // Pacientes con próximas citas (distinct patientId)
+    const withUpcomingRows = await Appointment.findAll({
+      attributes: [[fn('DISTINCT', col('patientId')), 'patientId']],
+      where: {
+        active: true,
+        professionalId,
+        status: 'scheduled',
+        [Op.and]: [
+          sequelize.where(fn('TIMESTAMP', col('date'), col('startTime')), { [Op.gt]: now }),
+        ],
+      },
+      raw: true,
+    });
+
+    // Citas del profesional (completadas y próximas)
+    const [completed, upcoming] = await Promise.all([
+      Appointment.count({
+        where: { active: true, professionalId, status: 'completed' },
+      }),
+      Appointment.count({
+        where: {
+          active: true,
+          professionalId,
+          status: 'scheduled',
+          [Op.and]: [
+            sequelize.where(fn('TIMESTAMP', col('date'), col('startTime')), { [Op.gt]: now }),
+          ],
+        },
+      }),
+    ]);
+
+    // "Notas": derivadas de citas (texto y audio)
+    const [notesTotal, notesAudio] = await Promise.all([
+      Appointment.count({
+        where: {
+          active: true,
+          professionalId,
+          notes: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }] },
+        },
+      }),
+      Appointment.count({
+        where: { active: true, professionalId, audioNote: { [Op.ne]: null } },
+      }),
+    ]);
+
+    return res.json({
       patients: {
-        total: professionalPatients.length,
-        active: professionalPatients.filter(p => p.status === 'active').length,
-        withUpcomingAppointments: professionalPatients.filter(p => 
-          p.nextAppointment && new Date(p.nextAppointment) > new Date()
-        ).length
+        total,
+        active: activeCount,
+        withUpcomingAppointments: withUpcomingRows.length,
       },
       appointments: {
-        completed: professionalPatients.reduce((sum, p) => 
-          sum + (p.appointments?.filter(a => a.status === 'completed').length || 0), 0
-        ),
-        upcoming: professionalPatients.filter(p => 
-          p.nextAppointment && new Date(p.nextAppointment) > new Date()
-        ).length
+        completed,
+        upcoming,
       },
       notes: {
-        total: professionalPatients.reduce((sum, p) => 
-          sum + (p.notes?.length || 0), 0
-        ),
-        audio: professionalPatients.reduce((sum, p) => 
-          sum + (p.notes?.filter(n => n.audioUrl).length || 0), 0
-        )
-      }
-    };
-
-    res.json(stats);
+        total: notesTotal,
+        audio: notesAudio,
+      },
+    });
   } catch (error) {
     console.error('Error al obtener estadísticas del profesional:', error);
-    res.status(500).json({ message: 'Error al obtener estadísticas del profesional' });
+    return res.status(500).json({ message: 'Error al obtener estadísticas del profesional' });
   }
 };
 

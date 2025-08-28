@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import statsService, { SystemStats, ProfessionalStats } from '../../services/stats.service';
+import { messageService, Message } from '../../services/messageService';
 import postsService, { Post } from '../../services/posts.service';
 import activityService from '../../services/activity.service';
 import { Activity } from '../../types/Activity';
@@ -52,16 +53,6 @@ interface ActivityItemProps {
   color: string;
   text: string;
   time: string;
-}
-
-interface Message {
-  _id: string;
-  nombre: string;
-  apellido: string;
-  correoElectronico: string;
-  mensaje: string;
-  fecha: string;
-  leido: boolean;
 }
 
 const API_URL = 'http://localhost:5000/api';
@@ -121,9 +112,9 @@ const Dashboard = () => {
   const loadRecentMessages = async () => {
     try {
       setMessageError(null);
-      const response = await axios.get(`${API_URL}/messages`);
+      const response = await messageService.getMessages();
       // Ordenar mensajes por fecha y tomar solo los más recientes
-      const sortedMessages = response.data
+      const sortedMessages = response
         .sort((a: any, b: any) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
         .slice(0, MAX_MESSAGES);
       setRecentMessages(sortedMessages);

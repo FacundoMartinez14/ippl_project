@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import appointmentsService from '../../services/appointments.service';
 import patientsService from '../../services/patients.service';
@@ -118,7 +118,7 @@ const AppointmentsPage = () => {
         return;
       }
 
-      const newAppointment = await appointmentsService.createAppointment({
+      await appointmentsService.createAppointment({
         ...appointmentData,
         professionalId: user!.id,
         professionalName: user!.name,
