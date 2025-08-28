@@ -1,13 +1,13 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireMessageManager, loadMessageById } = require('../middleware/message');
 const messageController = require('../controllers/messageController');
 
 // Ruta pública para enviar mensajes
 router.post('/', messageController.createMessage);
+
 
 // Rutas protegidas (requieren autenticación)
 router.get('/', authenticateToken, requireMessageManager, messageController.getAllMessages);

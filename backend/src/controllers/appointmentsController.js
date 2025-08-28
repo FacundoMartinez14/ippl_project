@@ -15,6 +15,7 @@ function toAmount(v) {
 
 const getAllAppointments = async (req, res) => {
   try {
+    console.log('getAllAppointments method');
     const appts = await Appointment.findAll({
       where: { active: true },
       order: [
@@ -108,7 +109,7 @@ const createAppointment = async (req, res) => {
         active: true,
         professionalId,
         date,
-        status: { [Op.ne]: 'cancelled' },
+        status: { [Op.eq]: 'scheduled' },
       },
       attributes: ['id', 'startTime', 'endTime'],
     });
@@ -221,7 +222,7 @@ const updateAppointment = async (req, res) => {
           active: true,
           professionalId: newProf,
           date: newDate,
-          status: { [Op.ne]: 'cancelled' },
+          status: { [Op.eq]: 'scheduled' },
         },
         attributes: ['id', 'startTime', 'endTime'],
       });

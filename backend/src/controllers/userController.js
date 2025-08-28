@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const { User, Abono } = require('../../models');
 const { toUserDTO } = require('../../mappers/UserMapper');
+const { toAbonoDTOList } = require('../../mappers/AbonoMapper');
 
 // helper numérico para DECIMAL
 function toAmount(v) {

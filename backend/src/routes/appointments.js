@@ -24,12 +24,7 @@ router.get('/slots/:professionalId', getAvailableSlots);
 router.get('/upcoming', getUpcomingAppointments);
 
 // Rutas que requieren ser admin o el profesional asignado
-router.get('/', (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Acceso denegado' });
-  }
-  next();
-}, getAllAppointments);
+router.get('/', getAllAppointments);
 
 router.post('/', createAppointment);
 

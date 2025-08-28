@@ -1,4 +1,3 @@
-// src/middleware/messages.js
 'use strict';
 
 const { Message } = require('../../models');
