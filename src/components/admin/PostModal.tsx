@@ -48,6 +48,10 @@ const PostModal: React.FC<PostModalProps> = ({ isOpen, onClose, onSave, post }) 
         data.append("content", formData.content ?? "");
         data.append("section", formData.section ?? "");
 
+        if(formData.thumbnail) {
+            data.append("thumbnail", formData.thumbnail);
+        }
+
         await onSave(data);
         onClose();
     };

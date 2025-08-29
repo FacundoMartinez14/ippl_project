@@ -47,6 +47,7 @@ import TodayAppointmentsPage from './pages/professional/TodayAppointmentsPage';
 import AllActivitiesPage from './pages/professional/AllActivitiesPage';
 import CompletedAppointmentsPage from './pages/professional/CompletedAppointmentsPage';
 import NotFoundReports from './pages/404';
+import ContentManagement from "./components/admin/ContentManagement.tsx";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -111,6 +112,7 @@ function App() {
             <Route path="estadisticas" element={<StatsPage />} />
             <Route path="solicitudes" element={<StatusRequestsManagement />} />
             <Route path="actividad" element={<ActivityPage />} />
+            <Route path="nuevo" element={<ContentManagement/>}/>
           </Route>
 
           {/* Financial routes */}

@@ -114,6 +114,15 @@ const ContentDashboard = () => {
       navigate(`${prefix}/nuevo`);
     }
   };
+    const handleOpenModal2 = (post?: Post) => {
+        let prefix = '/content';
+        if (user?.role === 'admin') prefix = '/admin';
+        if (post) {
+            navigate(`${prefix}/editar/${post.id}`);
+        } else {
+            navigate(`${prefix}/nuevo`);
+        }
+    };
 
   const fetchCarouselImages = async () => {
     try {
@@ -227,6 +236,15 @@ const ContentDashboard = () => {
               Nuevo Post
             </button>
             )}
+              {user?.role === 'admin' && (
+                  <button
+                      onClick={() => handleOpenModal2()}
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                      <PlusIcon className="h-5 w-5 mr-2"/>
+                      Nuevo Post de verdat
+                  </button>
+              )}
           </div>
         </div>
 

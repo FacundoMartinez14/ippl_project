@@ -25,6 +25,9 @@ const AdminLayout: React.FC = () => {
       case 'profesionales':
         title = 'Profesionales | Panel Admin';
         break;
+      case 'nuevo':
+        title = 'Posts | Panel Admin';
+        break;
       default:
         title = 'Panel Admin | IPPL';
     }

@@ -85,7 +85,7 @@ class PostsService {
     return this.request<{ posts: Post[] }>('');
   }
 
-  async createPost(postData: FormData): Promise<Post> {
+  async createPost(postData: FormData): Promise<PostResponse> {
     try {
       const response = await fetch(this.baseUrl, {
         method: 'POST',
@@ -100,8 +100,8 @@ class PostsService {
         throw new Error('Error al crear el post');
       }
 
-      const post = await response.json();
-      return post;
+      const data = await response.json();
+      return data.post;
     } catch (error) {
       console.error('Error al crear post:', error);
       throw error;

@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Post } = require('../../models');
 const { toPostDTO, toPostDTOList } = require('../../mappers/PostMapper');
+const {toArray} = require("funciones-basicas");
 
 function tryParseJSON(value, fallback) {
   if (value == null) return fallback;
@@ -86,7 +87,6 @@ const createPost = async (req, res) => {
       seo,
       status = 'draft',
       slug,               // opcional
-      thumbnail,          // opcional
       featured,           // opcional
       readTime,           // opcional
     } = req.body;
@@ -101,19 +101,19 @@ const createPost = async (req, res) => {
       });
     }
 
-    const tagsJson = tryParseJSON(tags, Array.isArray(tags) ? tags : []);
+    const tagsJson = tryParseJSON(tags, toArray(tags));
     const seoJson = tryParseJSON(seo, typeof seo === 'object' && seo ? seo : {});
 
-    // slug opcional (no autogeneramos si no viene, a menos que quieras lo contrario)
-    let uniqueSlug = null;
-    if (slug) {
-      const base = slugify(slug);
-      uniqueSlug = base;
+    // Generar slug automáticamente, siempre debido a que el modelo NO ADMITE NULL en slug
+      const base = slug ? slugify(slug) : slugify(title);
+      let uniqueSlug = base;
       let suffix = 1;
       while (await Post.findOne({ where: { slug: uniqueSlug } })) {
-        uniqueSlug = `${base}-${suffix++}`;
+          uniqueSlug = `${base}-${suffix++}`;
       }
-    }
+
+
+    const filePath = req.file ? req.file.filename : null;
 
     const created = await Post.create({
       title,
@@ -126,7 +126,7 @@ const createPost = async (req, res) => {
       authorName,
       status,
       slug: uniqueSlug,
-      thumbnail: thumbnail ?? null,
+      thumbnail: filePath,
       featured: typeof featured === 'boolean' ? featured : !!(featured === 'true'),
       readTime: readTime ?? '1 min',
       views: 0,

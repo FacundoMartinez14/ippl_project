@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import PostModal from './PostModal';
 import contentManagementService from '../../services/content.service';
 import PostEditor from './PostEditor';
+import {log} from "../../utils/log.ts";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -30,6 +31,7 @@ const ContentManagement = () => {
       setPosts(response.posts || []);
     } catch (error) {
       toast.error('Error al cargar los posts');
+      log("error", error, true);
       setPosts([]);
     } finally {
       setIsLoading(false);
@@ -59,12 +61,13 @@ const ContentManagement = () => {
         toast.success('Post actualizado correctamente');
       } else {
         const newPost = await postsService.createPost(postData);
-        setPosts([newPost, ...posts]);
+        setPosts([newPost.post, ...posts]);
         toast.success('Post creado correctamente');
       }
       handleCloseModal();
     } catch (error) {
       toast.error(selectedPost ? 'Error al actualizar el post' : 'Error al crear el post');
+      log("error", error, true);
     }
   };
 

@@ -45,7 +45,7 @@ router.get('/', postController.getAllPosts);
 router.get('/slug/:slug', postController.getPostBySlug);
 
 // Rutas protegidas
-router.use(verifyToken);
+// router.use(verifyToken);
 router.post('/', upload.single('thumbnail'), postController.createPost);
 
 // Obtener un post por ID
