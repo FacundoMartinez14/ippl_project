@@ -3,8 +3,7 @@ import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import axios from 'axios';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-
-const API_URL = 'http://localhost:5000/api';
+import { messageService } from '../services/messageService';
 
 const ContactPage: React.FC = () => {
   useEffect(() => {
@@ -37,7 +36,7 @@ const ContactPage: React.FC = () => {
     setSubmitStatus({ type: null, message: '' });
 
     try {
-      const response = await axios.post(`${API_URL}/messages`, formData);
+      const response = await messageService.submitMessage(formData);
       
       if (response.status === 201) {
         setSubmitStatus({

@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_URL } from '../config/config';
+import api from './api';
 
 export interface Message {
   _id: string;
@@ -14,26 +13,25 @@ export interface Message {
 export const messageService = {
   // Submit a new contact message
   async submitMessage(data: { nombre: string; apellido: string; correoElectronico: string; mensaje: string }) {
-    const response = await axios.post(`${API_URL}/api/messages`, data);
-    return response.data;
+    const response = await api.post(`/messages`, data);
+    return response;
   },
 
   // Get all messages
   async getMessages() {
-    console.log("entre al metodo")
-    const response = await axios.get<Message[]>(`${API_URL}/api/messages`);
+    const response = await api.get<Message[]>(`/messages`);
     return response.data;
   },
 
   // Mark message as read
   async markAsRead(id: string) {
-    const response = await axios.put<{ success: boolean }>(`${API_URL}/api/messages/${id}/read`);
+    const response = await api.put<{ success: boolean }>(`/messages/${id}/read`);
     return response.data;
   },
 
   // Delete all messages
   async clearAllMessages() {
-    const response = await axios.delete(`${API_URL}/api/messages/clear-all`);
+    const response = await api.delete(`/messages/clear-all`);
     return response.data;
   }
 }; 
