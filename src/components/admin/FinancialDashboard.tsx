@@ -131,6 +131,7 @@ const FinancialDashboard: React.FC = () => {
           .reduce((acc: number, curr: any) => acc + (curr.remainingBalance || 0), 0);
         const saldo = Number(prof.saldoTotal) || 0;
         const comision = Number(prof.commission) || 0;
+        console.log(comision);
         const abonosProf = Number(prof.saldoPendiente) || 0;
         const deudaComision = Math.max(saldo * (comision / 100) - abonosProf, 0);
         totalSaldo += saldo;
