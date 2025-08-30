@@ -105,15 +105,15 @@ const ContentDashboard = () => {
     }
   };
 
-  const handleOpenModal = (post?: Post) => {
-    let prefix = '/content';
-    if (user?.role === 'admin') prefix = '/admin/contenido';
-    if (post) {
-      navigate(`${prefix}/editar/${post.id}`);
-    } else {
-      navigate(`${prefix}/nuevo`);
-    }
-  };
+    const handleOpenModal = (post?: Post) => {
+        let prefix = '/content';
+        if (user?.role === 'admin') prefix = '/admin';
+        if (post) {
+            navigate(`${prefix}/editar/${post.id}`);
+        } else {
+            navigate(`${prefix}/nuevo`);
+        }
+    };
 
   const fetchCarouselImages = async () => {
     try {

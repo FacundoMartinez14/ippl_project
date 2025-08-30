@@ -30,7 +30,6 @@ import ContentDashboard from './components/admin/ContentDashboard';
 import PsychologistDashboard from './components/admin/PsychologistDashboard';
 import PatientManagement from './components/admin/PatientManagement';
 import AppointmentsCalendar from './components/admin/AppointmentsCalendar';
-import PostEditor from './components/admin/PostEditor';
 import AdminMessages from './pages/AdminMessages';
 import StatsPage from './pages/StatsPage';
 import ProfessionalPatients from './components/professional/ProfessionalPatients';
@@ -47,6 +46,7 @@ import TodayAppointmentsPage from './pages/professional/TodayAppointmentsPage';
 import AllActivitiesPage from './pages/professional/AllActivitiesPage';
 import CompletedAppointmentsPage from './pages/professional/CompletedAppointmentsPage';
 import NotFoundReports from './pages/404';
+import ContentManagement from "./components/admin/ContentManagement.tsx";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -111,6 +111,8 @@ function App() {
             <Route path="estadisticas" element={<StatsPage />} />
             <Route path="solicitudes" element={<StatusRequestsManagement />} />
             <Route path="actividad" element={<ActivityPage />} />
+            <Route path="nuevo" element={<ContentManagement/>}/>
+            <Route path="editar/:id" element={<ContentManagement/>}/>
           </Route>
 
           {/* Financial routes */}
@@ -133,8 +135,6 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<ContentDashboard />} />
-            <Route path="nuevo" element={<PostEditor />} />
-            <Route path="editar/:id" element={<PostEditor />} />
           </Route>
 
           {/* Professional routes */}

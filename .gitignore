@@ -2,7 +2,7 @@
 **/node_modules/
 
 # Build artifacts
-/frontend/dist/
+.dist/
 /backend/dist/
 
 # Entornos
@@ -12,6 +12,7 @@
 # Backend uploads y data locales
 /backend/uploads/
 /backend/data/
+/backend/config
 
 # Logs
 logs
@@ -21,3 +22,4 @@ logs
 .vscode/
 .idea/
 .DS_Store
+

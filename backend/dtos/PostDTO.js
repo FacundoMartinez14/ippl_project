@@ -9,6 +9,7 @@ function toIso(value) {
 class PostDTO {
   constructor(src) {
     const p = typeof src.get === 'function' ? src.get({ plain: true }) : src;
+    const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
 
     this.id = String(p.id);
     this.title = p.title;
@@ -17,7 +18,9 @@ class PostDTO {
     this.excerpt = p.excerpt;
     this.section = p.section;
     this.status = p.status; // 'draft' | 'published'
-    this.thumbnail = p.thumbnail || undefined;
+    this.thumbnail = p.thumbnail
+      ? `${BASE_URL}/uploads/posts/${p.thumbnail}`
+      : undefined;
 
     // Arrays / objetos con defaults seguros
     this.tags = Array.isArray(p.tags) ? p.tags : [];

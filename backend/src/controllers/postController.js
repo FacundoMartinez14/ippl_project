@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Post } = require('../../models');
 const { toPostDTO, toPostDTOList } = require('../../mappers/PostMapper');
+const {toArray} = require("funciones-basicas");
 
 function tryParseJSON(value, fallback) {
   if (value == null) return fallback;
@@ -86,7 +87,6 @@ const createPost = async (req, res) => {
       seo,
       status = 'draft',
       slug,               // opcional
-      thumbnail,          // opcional
       featured,           // opcional
       readTime,           // opcional
     } = req.body;
@@ -101,19 +101,19 @@ const createPost = async (req, res) => {
       });
     }
 
-    const tagsJson = tryParseJSON(tags, Array.isArray(tags) ? tags : []);
+    const tagsJson = tryParseJSON(tags, toArray(tags));
     const seoJson = tryParseJSON(seo, typeof seo === 'object' && seo ? seo : {});
 
-    // slug opcional (no autogeneramos si no viene, a menos que quieras lo contrario)
-    let uniqueSlug = null;
-    if (slug) {
-      const base = slugify(slug);
-      uniqueSlug = base;
+    // Generar slug automáticamente, siempre debido a que el modelo NO ADMITE NULL en slug
+      const base = slug ? slugify(slug) : slugify(title);
+      let uniqueSlug = base;
       let suffix = 1;
       while (await Post.findOne({ where: { slug: uniqueSlug } })) {
-        uniqueSlug = `${base}-${suffix++}`;
+          uniqueSlug = `${base}-${suffix++}`;
       }
-    }
+
+
+    const filePath = req.file ? req.file.filename : null;
 
     const created = await Post.create({
       title,
@@ -126,7 +126,7 @@ const createPost = async (req, res) => {
       authorName,
       status,
       slug: uniqueSlug,
-      thumbnail: thumbnail ?? null,
+      thumbnail: filePath,
       featured: typeof featured === 'boolean' ? featured : !!(featured === 'true'),
       readTime: readTime ?? '1 min',
       views: 0,
@@ -154,7 +154,6 @@ const createPost = async (req, res) => {
 const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
-
     const post = await Post.findByPk(id);
     if (!post || !post.active) {
       return res.status(404).json({ message: 'Post no encontrado' });
@@ -169,7 +168,7 @@ const updatePost = async (req, res) => {
 
     const {
       title, content, section, excerpt, tags, seo,
-      status, slug, thumbnail, featured, readTime,
+      status, slug, featured, readTime,
     } = req.body;
 
     const updates = {};
@@ -180,23 +179,29 @@ const updatePost = async (req, res) => {
     if (excerpt != null) updates.excerpt = excerpt;
     if (tags !== undefined) updates.tags = tryParseJSON(tags, Array.isArray(tags) ? tags : []);
     if (seo !== undefined) updates.seo = tryParseJSON(seo, typeof seo === 'object' && seo ? seo : {});
-    if (thumbnail !== undefined) updates.thumbnail = thumbnail ?? null;
+
+    if (req.file) {
+        updates.thumbnail = req.file.filename;
+    } else if(req.body.thumbnail === null || req.body.thumbnail === ""){
+        updates.thumbnail = null;
+    }
+
     if (featured !== undefined) {
       updates.featured = typeof featured === 'boolean' ? featured : !!(featured === 'true');
     }
     if (readTime !== undefined) updates.readTime = readTime;
 
     if (slug !== undefined && slug !== post.slug) {
-      if (slug) {
-        const base = slugify(slug);
-        let uniqueSlug = base, suffix = 1;
-        while (await Post.findOne({ where: { slug: uniqueSlug, id: { [Op.ne]: id } } })) {
-          uniqueSlug = `${base}-${suffix++}`;
+        if(slug){
+            const base = slugify(slug);
+            let uniqueSlug = base, suffix = 1;
+            while (await Post.findOne({ where: { slug: uniqueSlug, id: { [Op.ne]: id } } })) {
+                uniqueSlug = `${base}-${suffix++}`;
+            }
+            updates.slug = uniqueSlug;
+        } else {
+            updates.slug = null;
         }
-        updates.slug = uniqueSlug;
-      } else {
-        updates.slug = null;
-      }
     }
 
     if (status !== undefined && status !== post.status) {
@@ -205,17 +210,11 @@ const updatePost = async (req, res) => {
         updates.publishedAt = new Date();
       }
       // Si se vuelve a draft NO borro publishedAt, salvo que venga explícito:
-      if (status === 'draft' && publishedAt === null) {
+      if (status === 'draft' && req.body.publishedAt === null) {
         updates.publishedAt = null;
       }
     }
-
-    if (status !== undefined && status !== post.status) {
-      updates.status = status;
-    }
-
     await post.update(updates);
-
     return res.json(toPostDTO(post));
   } catch (error) {
     console.error('Error al actualizar post:', error);

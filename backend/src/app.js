@@ -98,6 +98,9 @@ app.use('/api/frequency-requests', frequencyRequestsRoutes);
 app.use('/api/medical-history', medicalHistoryRouter);
 app.use('/api/activities', activitiesRouter);
 
+// se sirve este ep para el muestreo correcto de las imagenes estaticas cargadas en el servidor
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
 // Manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error:', err);

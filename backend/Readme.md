@@ -17,3 +17,5 @@
 - `npm run lint`: Linta el código y muestra errores/warnings.
 - `npm run lint:fix`: Linta y corrige automáticamente los errores de formato que pueda (espacios, comillas, imports, etc).
 
+## Paquetes extras:
+- [Funciones Básicas](https://github.com/Scerutti/funciones-basicas)
