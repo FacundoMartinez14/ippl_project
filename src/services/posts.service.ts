@@ -1,6 +1,4 @@
 import api from '../config/api';
-import { AxiosResponse } from 'axios';
-import activityService from './activity.service';
 
 export interface Post {
   id: string;
@@ -38,189 +36,71 @@ export interface Post {
 
 export type CreatePostDTO = Partial<Post>
 
-interface PostsResponse {
+export interface PostsResponse {
   posts: Post[];
 }
 
-interface PostResponse {
+export interface PostResponse {
   post: Post;
 }
 
+interface ToggleLikeResponse {
+  likes: number;
+  isLiked: boolean;
+}
+interface IncrementViewsResponse {
+    views: number;
+    isViewed: boolean
+}
+
 class PostsService {
-  private baseUrl = import.meta.env.VITE_API_URL + '/api/posts';
-
-  private getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    return {
-      'Authorization': `Bearer ${token}`
-    };
+  async getAllPosts(): Promise<PostsResponse> {
+    const res = await api.get<PostsResponse>('/posts');
+    return res.data;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
-    const defaultOptions: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...this.getAuthHeaders()
-      },
-    };
-
-    const response = await fetch(url, { ...defaultOptions, ...options });
-    
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('No autorizado. Por favor, inicia sesión.');
-      }
-      throw new Error(`Error HTTP: ${response.status}`);
-    }
-
-    if (response.status === 204) {
-      return null as T;
-    }
-
-    return response.json();
-  }
-
-  async getAllPosts(): Promise<{ posts: Post[] }> {
-    return this.request<{ posts: Post[] }>('');
-  }
-
-  async createPost(postData: FormData): Promise<Post> {
-    try {
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: postData
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('No autorizado. Por favor, inicia sesión.');
-        }
-        throw new Error('Error al crear el post');
-      }
-
-      const post = await response.json();
-      return post;
-    } catch (error) {
-      console.error('Error al crear post:', error);
-      throw error;
-    }
+  async createPost(postData: FormData): Promise<PostResponse> {
+    const res = await api.post('/posts', postData);
+    return res.data;
   }
 
   async updatePost(id: string, postData: FormData): Promise<Post> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-        body: postData
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('No autorizado. Por favor, inicia sesión.');
-        }
-        throw new Error('Error al actualizar el post');
-      }
-
-      const post = await response.json();
-      return post;
-    } catch (error) {
-      console.error('Error al actualizar post:', error);
-      throw error;
-    }
+      const res = await api.put(`/posts/${id}`, postData);
+      return res.data;
   }
 
   async deletePost(id: string): Promise<void> {
-    await this.request(`/${id}`, { method: 'DELETE' });
+      await api.delete(`/posts/${id}`);
   }
 
   async getPostById(id: string): Promise<Post> {
-    const headers = this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}/${id}`, {
-      headers: headers
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('No autorizado. Por favor, inicia sesión.');
-      }
-      if (response.status === 404) {
-        throw new Error('Post no encontrado');
-      }
-      throw new Error('Error al obtener el post');
-    }
-    return response.json();
+      const res = await api.get(`/posts/${id}`);
+      return res.data;
   }
 
-  async toggleLike(id: string): Promise<{ likes: number; isLiked: boolean }> {
-    const headers = this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}/${id}/toggle-like`, {
-      method: 'POST',
-      headers: headers
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('No autorizado. Por favor, inicia sesión.');
-      }
-      throw new Error('Error al gestionar el like del post');
-    }
-    return response.json();
+  async toggleLike(id: string): Promise<ToggleLikeResponse> {
+    const resp = await api.post<ToggleLikeResponse>(`/posts/${id}/toggle-like`);
+    return resp.data;
   }
 
   async checkIfLiked(id: string): Promise<boolean> {
-    const headers = this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}/${id}/check-like`, {
-      headers: headers
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('No autorizado. Por favor, inicia sesión.');
-      }
-      throw new Error('Error al verificar el like del post');
-    }
-    const data = await response.json();
-    return data.isLiked;
+    const resp = await api.get<boolean>(`/posts/${id}/check-like`);
+    return resp.data;
   }
 
   async checkIfViewed(id: string): Promise<boolean> {
-    const headers = this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}/${id}/check-view`, {
-      headers: headers
-    });
-
-    if (!response.ok) {
-      throw new Error('Error al verificar vista del post');
-    }
-    const data = await response.json();
-    return data.isViewed;
+      const resp = await api.get<boolean>(`/posts/${id}/check-view`);
+      return resp.data;
   }
 
-  async incrementViews(id: string): Promise<{ views: number; isViewed: boolean }> {
-    const headers = this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}/${id}/increment-view`, {
-      method: 'POST',
-      headers: headers
-    });
-
-    if (!response.ok) {
-      throw new Error('Error al incrementar las vistas del post');
-    }
-    return response.json();
+  async incrementViews(id: string): Promise<IncrementViewsResponse> {
+      const resp = await api.post<IncrementViewsResponse>(`/posts/${id}/increment-view`);
+      return resp.data;
   }
 
-  async getStats(): Promise<any> {
-    const headers = this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}/stats`, {
-      headers: headers
-    });
-
-    if (!response.ok) {
-      throw new Error('Error al obtener las estadísticas');
-    }
-    return response.json();
+  async getStats() {
+      const resp = await api.get('/stats');
+      return resp.data;
   }
 }
 
