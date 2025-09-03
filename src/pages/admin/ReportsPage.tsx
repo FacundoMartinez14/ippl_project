@@ -85,45 +85,80 @@ const ReportsPage: React.FC = () => {
   };
 
   const generateProfessionalPDF = async () => {
-    if (!selectedProfessional) return;
-    const prof = professionals.find(p => p.id === selectedProfessional);
-    if (!prof) return;
-    const appointments = await appointmentsService.getProfessionalAppointments(prof.id);
-    const filtered = appointments.filter(a => {
-      const date = new Date(a.date);
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
-      if (start && end && date >= start && date <= end) return true;
-      return false;
-    });
-    const finalizadas = filtered.filter(a => a.status === 'completed');
-    const ausentes = filtered.filter(a => a.status === 'completed' && !a.attended).length;
-    const patients = await patientsService.getProfessionalPatients(prof.id);
-    const patientMap = Object.fromEntries(patients.map((p: any) => [p.id, p]));
-    const rows = finalizadas.map(a => [
-      a.patientName,
-      a.attended ? 'Asistió' : 'No asistió',
-      patientMap[a.patientId]?.sessionFrequency === 'weekly' ? 'Semanal' : patientMap[a.patientId]?.sessionFrequency === 'biweekly' ? 'Quincenal' : patientMap[a.patientId]?.sessionFrequency === 'monthly' ? 'Mensual' : '-',
-      `$${(a.paymentAmount || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
-    ]);
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('Instituto Psicológico y Psicoanálisis del Litoral', 105, 15, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(`Reporte de Citas Finalizadas - ${prof.name}`, 105, 25, { align: 'center' });
-    doc.setFontSize(11);
-    doc.text(`Rango: ${startDate || '...'} a ${endDate || '...'}`, 10, 32);
-    doc.text(`Cantidad de citas finalizadas: ${finalizadas.length}`, 10, 40);
-    doc.text(`Pacientes ausentes: ${ausentes}`, 10, 46);
-    autoTable(doc, {
-      head: [['Paciente', 'Asistencia', 'Frecuencia', 'Saldo']],
-      body: rows,
-      startY: 52,
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] },
-    });
-    doc.save(`Reporte_Citas_${prof.name.replace(/ /g, '_')}.pdf`);
+  if (!selectedProfessional) return;
+
+  const prof = professionals.find(p => p.id == selectedProfessional);
+  console.log(prof)
+  if (!prof) return;
+
+  // util: fecha local
+  const toLocalDate = (ymd: string) => {
+    const [y,m,d] = ymd.split('-').map(Number);
+    return new Date(y, m-1, d);
   };
+
+  // normalizar rango (todo el día)
+  const start = startDate ? toLocalDate(startDate) : null;
+  const end   = endDate   ? toLocalDate(endDate)   : null;
+  if (start) start.setHours(0,0,0,0);
+  if (end)   end.setHours(23,59,59,999);
+
+  // pedir en paralelo
+  const [appointments, patients] = await Promise.all([
+    appointmentsService.getProfessionalAppointments(prof.id),
+    patientsService.getProfessionalPatients(prof.id),
+  ]);
+
+  // diccionario de pacientes
+  const patientMap = Object.fromEntries(patients.map((p: any) => [p.id, p]));
+
+  // filtrar por rango (acepta 3 casos)
+  const inRange = (a: any) => {
+    const d = toLocalDate(a.date);
+    if (start && end)   return d >= start && d <= end;
+    if (start && !end)  return d >= start;
+    if (!start && end)  return d <= end;
+    return true; // sin filtros
+  };
+
+  const filtered = appointments.filter(inRange);
+  const finalizadas = filtered.filter(a => a.status === 'completed');
+  const ausentes = finalizadas.filter(a => !a.attended).length;
+
+  // helper frecuencia
+  const freqLabel = (f?: 'weekly'|'biweekly'|'monthly') =>
+    f === 'weekly' ? 'Semanal' :
+    f === 'biweekly' ? 'Quincenal' :
+    f === 'monthly' ? 'Mensual' : '-';
+
+  // OJO: aquí decides qué mostrar como “Saldo”
+  const rows = finalizadas.map(a => [
+    a.patientName,
+    a.attended ? 'Asistió' : 'No asistió',
+    freqLabel(patientMap[a.patientId]?.sessionFrequency),
+    `$${(a.paymentAmount ?? 0).toLocaleString('es-CO', { minimumFractionDigits: 2 })}`,
+  ]);
+
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('Instituto Psicológico y Psicoanálisis del Litoral', 105, 15, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text(`Reporte de Citas Finalizadas - ${prof.name}`, 105, 25, { align: 'center' });
+  doc.setFontSize(11);
+  doc.text(`Rango: ${startDate || '...'} a ${endDate || '...'}`, 10, 32);
+  doc.text(`Cantidad de citas finalizadas: ${finalizadas.length}`, 10, 40);
+  doc.text(`Pacientes ausentes: ${ausentes}`, 10, 46);
+
+  autoTable(doc, {
+    head: [['Paciente', 'Asistencia', 'Frecuencia', 'Saldo']],
+    body: rows,
+    startY: 52,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [41, 128, 185] },
+  });
+  console.log('llegue al evento')
+  doc.save(`Reporte_Citas_${prof.name.replace(/ /g, '_')}.pdf`);
+};
 
   return (
     <div className="p-8">

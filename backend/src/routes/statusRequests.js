@@ -18,8 +18,8 @@ router.get('/professional/:professionalId', authenticateToken, checkRole(['profe
 router.post('/status-change', authenticateToken, checkRole(['professional']), createRequest);
 
 // Rutas para admin
-router.get('/pending', authenticateToken, checkRole(['admin']), getPendingRequests);
-router.post('/:requestId/approve', authenticateToken, checkRole(['admin']), approveRequest);
-router.post('/:requestId/reject', authenticateToken, checkRole(['admin']), rejectRequest);
+router.get('/pending', authenticateToken, checkRole(['admin', 'financial']), getPendingRequests);
+router.post('/:requestId/approve', authenticateToken, checkRole(['admin', 'financial']), approveRequest);
+router.post('/:requestId/reject', authenticateToken, checkRole(['admin', 'financial']), rejectRequest);
 
 module.exports = router; 

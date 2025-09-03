@@ -44,6 +44,16 @@ class AppointmentsService {
     }
   }
 
+    async getTodayProfessionalAppointments(professionalId: string): Promise<Appointment[]> {
+    try {
+      const response = await api.get(`/appointments/professional/today/${professionalId}`);
+      return response.data.appointments || [];
+    } catch (error) {
+      console.error('Error fetching today professional appointments:', error);
+      return [];
+    }
+  }
+
   async getPatientAppointments(patientId: string): Promise<Appointment[]> {
     try {
       const response = await api.get(`/appointments/patient/${patientId}`);
@@ -57,7 +67,6 @@ class AppointmentsService {
   async createAppointment(appointmentData: Partial<Appointment>): Promise<Appointment> {
     try {
       const response = await api.post('/appointments', appointmentData);
-      console.log(response.data)
       return response.data;
     } catch (error) {
       console.error('Error creating appointment:', error);

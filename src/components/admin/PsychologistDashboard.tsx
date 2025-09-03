@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import patientsService from '../../services/patients.service';
 import appointmentsService from '../../services/appointments.service';
 import { Appointment } from '../../types/Appointment';
+import { parseNumber } from '../../utils/functionUtils.ts';
 import { 
   UserIcon, 
   ClockIcon,
@@ -16,9 +17,11 @@ import { useNavigate } from 'react-router-dom';
 import Modal from '../Modal';
 import RecentActivityProfessional from '../professional/RecentActivityProfessional';
 import {Patient} from "../../types/Patient.ts";
+import userService, {User} from '../../services/user.service.ts';
 
 const PsychologistDashboard = () => {
   const { user, logout } = useAuth();
+  const [userLoaded, setUserLoaded] = useState<User>();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,12 +38,14 @@ const PsychologistDashboard = () => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [patientsData, appointmentsData] = await Promise.all([
+      const [patientsData, appointmentsData, userPromise] = await Promise.all([
         patientsService.getProfessionalPatients(user!.id),
-        appointmentsService.getProfessionalAppointments(user!.id)
+        appointmentsService.getProfessionalAppointments(user!.id),
+        userService.getUserById(parseNumber(user?.id))
       ]);
       setPatients(patientsData);
       setAppointments(appointmentsData);
+      setUserLoaded(userPromise);
     } catch (error) {
       console.error('Error al cargar datos:', error);
       toast.error('Error al cargar los datos');
@@ -61,17 +66,23 @@ const PsychologistDashboard = () => {
     navigate('/login');
   };
 
+  const toLocalDateFromYMD = (ymd: string) => {
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const isSameLocalDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
   const activePatients = patients.filter(p => p.status === 'active');
   const completedAppointments = appointments.filter(a => a.status === 'completed');
   const todayAppointments = appointments.filter(a => {
-    const appointmentDate = new Date(a.date);
+  const appointmentDate = toLocalDateFromYMD(a.date);
     const today = new Date();
-    return appointmentDate.toDateString() === today.toDateString() && a.status !== 'completed';
+    return isSameLocalDay(appointmentDate, today) && a.status !== 'completed';
   });
-
-  // Calcular saldos
-  const totalSaldo = completedAppointments.reduce((acc, a) => acc + (a.paymentAmount || 0), 0);
-  const saldoPendiente = completedAppointments.reduce((acc, a) => acc + (a.remainingBalance || 0), 0);
 
   if (isLoading) {
     return (
@@ -120,7 +131,7 @@ const PsychologistDashboard = () => {
               <CurrencyDollarIcon className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-4">
-              <h3 className="text-3xl font-bold text-gray-900">${totalSaldo.toFixed(2)}</h3>
+              <h3 className="text-3xl font-bold text-gray-900">${userLoaded?.saldoTotal}</h3>
               <p className="text-lg text-gray-600 font-semibold">Saldo Total</p>
             </div>
           </div>
@@ -129,7 +140,7 @@ const PsychologistDashboard = () => {
               <CurrencyDollarIcon className="h-8 w-8 text-red-600" />
             </div>
             <div className="ml-4">
-              <h3 className="text-3xl font-bold text-gray-900">${saldoPendiente.toFixed(2)}</h3>
+              <h3 className="text-3xl font-bold text-gray-900">${userLoaded?.saldoPendiente}</h3>
               <p className="text-lg text-gray-600 font-semibold">Saldo Pendiente</p>
             </div>
           </div>
@@ -170,8 +181,8 @@ const PsychologistDashboard = () => {
                 <CalendarIcon className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">{todayAppointments.length}</h3>
-                <p className="text-sm text-gray-600">Cita</p>
+                <h3 className="text-2xl font-bold text-gray-900">{todayAppointments.length} Hoy</h3>
+                <p className="text-sm text-gray-600">Citas pendientes</p>
               </div>
             </div>
           </div>

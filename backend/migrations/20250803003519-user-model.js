@@ -38,11 +38,13 @@ module.exports = {
       },
       saldoTotal: {
         type: Sequelize.DECIMAL(12,2),
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0,
       },
       saldoPendiente: {
         type: Sequelize.DECIMAL(12,2),
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0,
       },
       lastLogin: {
         type: Sequelize.DATE,

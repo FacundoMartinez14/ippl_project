@@ -9,7 +9,6 @@ const statusRequestService = {
 
   getPendingRequests: async (): Promise<StatusRequest[]> => {
     const response = await api.get<{ requests: StatusRequest[] }>('/status-requests/pending');
-    console.log('DEBUG: Solicitudes pendientes recibidas', response.data.requests.map(r => r.id));
     return response.data.requests;
   },
 

@@ -4,12 +4,10 @@ import userService, { User } from '../../services/user.service';
 import { 
   CurrencyDollarIcon, 
   ArrowTrendingUpIcon,
-  ClockIcon,
   ExclamationCircleIcon,
   ArrowPathIcon,
   CalendarIcon,
   UserGroupIcon,
-  DocumentChartBarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -43,7 +41,6 @@ const FinancialDashboard: React.FC = () => {
   // Eliminar: const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('month');
   const [professionals, setProfessionals] = useState<User[]>([]);
   const [selectedProfessional, setSelectedProfessional] = useState<User | null>(null);
-  const [pendingByProfessional, setPendingByProfessional] = useState<{ [id: string]: number }>({});
   const [totalSaldoProfesionales, setTotalSaldoProfesionales] = useState(0);
   const [totalDeudaComision, setTotalDeudaComision] = useState(0);
   const [totalAbonosInstituto, setTotalAbonosInstituto] = useState(0);
@@ -115,37 +112,19 @@ const FinancialDashboard: React.FC = () => {
 
   const loadProfessionals = async () => {
     try {
-      const users = await userService.getUsers();
-      const pros = users.filter(u => u.role === 'professional');
-      setProfessionals(pros);
+      const users = await userService.getProfessionals();
+      setProfessionals(users);
       // Calcular saldo pendiente de pacientes para cada profesional
-      const pending: { [id: string]: number } = {};
-      let totalSaldo = 0;
-      let totalDeuda = 0;
-      let totalAbonos = 0;
-      const abonos: { name: string; amount: number; date: string }[] = [];
-      for (const prof of pros) {
-        const appointments = await appointmentsService.getProfessionalAppointments(prof.id);
-        pending[prof.id] = appointments
-          .filter((a: any) => a.status === 'completed' && a.attended)
-          .reduce((acc: number, curr: any) => acc + (curr.remainingBalance || 0), 0);
-        const saldo = Number(prof.saldoTotal) || 0;
-        const comision = Number(prof.commission) || 0;
-        console.log(comision);
-        const abonosProf = Number(prof.saldoPendiente) || 0;
-        const deudaComision = Math.max(saldo * (comision / 100) - abonosProf, 0);
-        totalSaldo += saldo;
-        totalDeuda += deudaComision;
-        totalAbonos += abonosProf;
-        if (abonosProf > 0) {
-          abonos.push({ name: prof.name, amount: abonosProf, date: new Date().toISOString() });
-        }
-      }
-      setPendingByProfessional(pending);
-      setTotalSaldoProfesionales(totalSaldo);
-      setTotalDeudaComision(totalDeuda);
-      setTotalAbonosInstituto(totalAbonos);
-      setRecentAbonos(abonos.slice(-5).reverse());
+      const { totalSaldo, totalDeuda } = users.reduce(
+      (acc, { saldoTotal, saldoPendiente }) => ({
+        totalSaldo: acc.totalSaldo + saldoTotal,
+        totalDeuda: acc.totalDeuda + saldoPendiente,
+      }),
+      { totalSaldo: 0, totalDeuda: 0 }
+    );
+
+    setTotalSaldoProfesionales(totalSaldo);
+    setTotalDeudaComision(totalDeuda);
     } catch (error) {
       toast.error('Error al cargar profesionales');
     }
@@ -261,8 +240,8 @@ const FinancialDashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="p-6 flex-1 min-h-0 flex flex-col gap-8">
+      <div className="bg-white rounded-2xl shadow-lg p-6 flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -347,7 +326,7 @@ const FinancialDashboard: React.FC = () => {
             </div>
 
             {/* Transacciones Recientes y Resumen por Profesional */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
               {/* Transacciones Recientes */}
               <div className="bg-white rounded-xl shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -381,7 +360,7 @@ const FinancialDashboard: React.FC = () => {
               </div>
 
               {/* Resumen por Profesional */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
+              <div className="bg-white rounded-2xl shadow p-6">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <UserGroupIcon className="h-6 w-6 text-blue-600" /> Resumen por Profesional
                 </h2>
@@ -397,13 +376,14 @@ const FinancialDashboard: React.FC = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {professionals.map(prof => {
-                        const saldo = Number(prof.saldoTotal) || 0;
-                        const saldoPendientePacientes = pendingByProfessional[prof.id] || 0;
+                        const saldo = prof.saldoTotal;
+                        const saldoPendientePacientes = prof.saldoPendiente;
+                        console.log(saldoPendientePacientes)
                         return (
                           <tr key={prof.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">{prof.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">${saldo.toFixed(2)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-red-600 font-semibold">${saldoPendientePacientes.toFixed(2)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">${saldo}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-red-600 font-semibold">${saldoPendientePacientes}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <button
                                 onClick={() => setSelectedProfessional(prof)}

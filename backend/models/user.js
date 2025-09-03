@@ -50,15 +50,13 @@ module.exports = (sequelize, DataTypes) => {
       },
       saldoTotal: {
         type: DataTypes.DECIMAL(12, 2),
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0,
       },
       saldoPendiente: {
         type: DataTypes.DECIMAL(12, 2),
-        allowNull: true,
-      },
-      lastLogin: {
-        type: DataTypes.DATE,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0,
       },
     },
     {

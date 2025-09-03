@@ -1,6 +1,6 @@
 'use strict';
 const bcrypt = require('bcryptjs');
-const { User, Abono } = require('../../models');
+const { User, Abono, sequelize } = require('../../models');
 const { toUserDTO } = require('../../mappers/UserMapper');
 const { toAbonoDTOList } = require('../../mappers/AbonoMapper');
 
@@ -10,6 +10,30 @@ function toAmount(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Get user by id
+
+const getUserById = async (req, res) => {
+  const { id } = req.params;
+try {
+    const user = await User.findByPk(id);
+    const dtos = toUserDTO(user);
+    res.json(dtos);
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ message: 'Error al obtener usuario' });
+  }
+}
+
+const getProfessionals = async (req, res) =>{
+  try{
+    const professionals = await User.findAll({where: {role: 'professional'}})
+    const dtos = professionals.map(x => toUserDTO(x));
+    res.json(dtos);
+  } catch (error) {
+    console.error('Error getting professionals:', error);
+    res.status(500).json({ message: 'Error al obtener profesionales' });
+  }
+}
 // Get all users
 const getUsers = async (req, res) => {
   try {
@@ -20,7 +44,7 @@ const getUsers = async (req, res) => {
     console.error('Error getting users:', error);
     res.status(500).json({ message: 'Error al obtener usuarios' });
   }
-};
+}
 
 // Create a new user
 const createUser = async (req, res) => {
@@ -44,8 +68,8 @@ const createUser = async (req, res) => {
       role,
       status: status ?? 'active',
       commission: commission ?? null,
-      saldoTotal: saldoTotal ?? null,
-      saldoPendiente: saldoPendiente ?? null,
+      saldoTotal: saldoTotal,
+      saldoPendiente: saldoPendiente,
     });
 
     return res.status(201).json(toUserDTO(created));
@@ -141,7 +165,7 @@ const abonarComision = async (req, res) => {
     }
 
     const prevSaldo = toAmount(professional.saldoPendiente);
-    const nextSaldo = +(prevSaldo + amount).toFixed(2);
+    const nextSaldo = +(prevSaldo - amount).toFixed(2);
 
     await professional.update(
       { saldoPendiente: nextSaldo, updatedAt: new Date() },
@@ -185,6 +209,8 @@ const getAbonos = async (req, res) => {
 };
 
 module.exports = {
+  getUserById,
+  getProfessionals,
   getUsers,
   createUser,
   updateUser,

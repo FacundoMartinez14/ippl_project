@@ -803,7 +803,7 @@ const PatientManagement = () => {
   const handleViewStatusRequest = async (patient: Patient) => {
     try {
       const requests = await statusRequestService.getPendingRequests();
-      const request = requests.find(r => r.patientId === patient.id && r.requestedStatus === 'inactive' && r.type !== 'activation');
+      const request = requests.find(r => r.patientId == patient.id && r.requestedStatus == 'inactive' && r.type != 'activation');
       if (request) {
         setSelectedStatusRequest(request);
         setSelectedPatient(patient);
@@ -854,7 +854,7 @@ const PatientManagement = () => {
   const handleViewFrequencyRequest = async (patient: Patient) => {
     try {
       const requests = await frequencyRequestService.getPendingRequests();
-      const request = requests.find(r => r.patientId === patient.id);
+      const request = requests.find(r => r.patientId == patient.id);
       if (request) {
         setSelectedFrequencyRequest(request);
         setSelectedPatient(patient);
@@ -895,11 +895,10 @@ const PatientManagement = () => {
   const handleViewActivationRequest = async (patient: Patient) => {
     try {
       const requests = await statusRequestService.getPendingRequests();
-      console.log('DEBUG: Todas las solicitudes pendientes para este paciente:', requests.filter(r => r.patientId === patient.id).map(r => ({id: r.id, requestedStatus: r.requestedStatus, type: r.type})));
-      const request = requests.find(r => r.patientId === patient.id && r.type === 'activation' && r.requestedStatus === 'alta');
+      const request = requests.find(r => r.patientId == patient.id && r.requestedStatus == 'alta');
       if (request) {
         setSelectedActivationRequest(request);
-        setSelectedStatusRequest(request); // Asegura que handleApproveRequest tenga el request correcto
+        setSelectedStatusRequest(request);
         setSelectedPatient(patient);
         setIsActivationRequestModalOpen(true);
       } else {

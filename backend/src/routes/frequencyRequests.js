@@ -107,7 +107,7 @@ router.post(
 router.get(
   '/pending',
   authenticateToken,
-  checkRole(['admin']),
+  checkRole(['admin', 'financial']),
   async (req, res) => {
     try {
       const pending = await FrequencyRequest.findAll({
@@ -128,7 +128,7 @@ router.get(
 router.get(
   '/patient/:patientId',
   authenticateToken,
-  checkRole(['admin', 'professional']),
+  checkRole(['admin', 'professional', 'financial']),
   async (req, res) => {
     try {
       const { patientId } = req.params;

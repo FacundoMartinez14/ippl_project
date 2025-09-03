@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import appointmentsService from '../../services/appointments.service';
 import patientsService from '../../services/patients.service';
-import { Appointment } from '../../types/Appointment';
+import { Appointment, AppointmentStatus } from '../../types/Appointment';
 import { Patient } from '../../types/Patient';
 import { 
   CalendarIcon, 
@@ -97,16 +97,16 @@ const AppointmentsPage = () => {
     toast.success('Datos actualizados');
   };
 
-  const getAppointmentStatus = (date: string) => {
-    const appointmentTime = new Date(date).getTime();
-    const now = new Date().getTime();
-    
-    if (appointmentTime < now) {
-      return { label: 'Finalizada', class: 'bg-gray-100 text-gray-800' };
-    } else if (appointmentTime - now < 30 * 60 * 1000) { // 30 minutos
-      return { label: 'Próxima', class: 'bg-yellow-100 text-yellow-800' };
-    } else {
-      return { label: 'Pendiente', class: 'bg-green-100 text-green-800' };
+  const getAppointmentStatus = (status: string) => {
+    switch(status){
+      case AppointmentStatus.scheduled:
+        return {label: 'Pendiente', class: 'bg-yellow-100 text-yellow-800'}
+      case AppointmentStatus.completed:
+        return {label: 'Finalizada', class: 'bg-gray-100 text-gray-800'}
+      case AppointmentStatus.cancelled:
+        return {label: 'Cancelada', class: 'bg-red-100 text-red-800'}
+      default:
+        return {label: '', class: ''};
     }
   };
 
@@ -229,7 +229,6 @@ const AppointmentsPage = () => {
   };
 
   const filteredAppointments = appointments
-    .filter(appointment => appointment.status !== 'completed') // Oculta las finalizadas
     .filter(appointment => {
     const appointmentDate = new Date(appointment.date);
     const now = new Date();
@@ -354,8 +353,8 @@ const AppointmentsPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAppointments.map((appointment) => {
-                  const status = getAppointmentStatus(appointment.date);
+                {appointments.map((appointment) => {
+                  const status = getAppointmentStatus(appointment.status);
                   return (
                     <tr key={appointment.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">

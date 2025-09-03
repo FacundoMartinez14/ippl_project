@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import patientsService, { Patient } from '../services/patients.service';
+import patientsService from '../services/patients.service';
 import frequencyRequestService, { FrequencyRequest } from '../services/frequencyRequest.service';
 import statusRequestService from '../services/statusRequest.service';
 import { StatusRequest } from '../types/StatusRequest';
+import { Patient } from '../types/Patient';
 import { AdjustmentsHorizontalIcon, XCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const FinancialSolicitudesPage: React.FC = () => {
@@ -39,10 +40,7 @@ const FinancialSolicitudesPage: React.FC = () => {
     setShowModal(true);
     const requests = await statusRequestService.getPendingRequests();
     // Filtrar por paciente y tipo de solicitud
-    const filtered = requests.filter(r => r.patientId === patient.id && (
-      (type === 'inactive' && r.requestedStatus === 'inactive') ||
-      (type === 'alta' && r.requestedStatus === 'absent')
-    ));
+    const filtered = requests.filter(r => r.requestedStatus === type);
     setStatusRequests(filtered);
   };
 

@@ -86,7 +86,7 @@ const FinancialLayout: React.FC = () => {
       </div>
 
       {/* Main content */}
-      <div className="ml-64">
+      <div className="ml-64 min-h-screen flex flex-col">
         <Outlet />
       </div>
     </div>

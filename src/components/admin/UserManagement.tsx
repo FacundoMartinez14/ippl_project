@@ -81,6 +81,8 @@ const UserManagement: React.FC = () => {
         return 'Editor de contenido';
       case 'professional':
         return 'Psicólogo';
+      case 'financial':
+        return "Financiero";
       default:
         return role;
     }

@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Appointment, Patient, User } = require('../../models');
+const { Appointment, Patient, User, sequelize } = require('../../models');
 const { toAppointmentDTO, toAppointmentDTOList } = require('../../mappers/AppointmentMapper');
 
 function toMinutes(hhmm) {
@@ -12,6 +12,8 @@ function toAmount(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
+
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const getAllAppointments = async (req, res) => {
   try {
@@ -51,6 +53,37 @@ const getProfessionalAppointments = async (req, res) => {
     return res.status(500).json({ message: 'Error al obtener citas' });
   }
 };
+
+const getTodayProfessionalAppointments = async (req, res) => {
+  try {
+    const { professionalId } = req.params;
+
+    // YYYY-MM-DD en hora local del servidor
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const today = `${yyyy}-${mm}-${dd}`;
+
+    const appts = await Appointment.findAll({
+      where: {
+        active: true,
+        professionalId,
+        date: today,
+      },
+      order: [
+        ['date', 'ASC'],
+        ['startTime', 'ASC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return res.json({ appointments: toAppointmentDTOList(appts) });
+  } catch (error) {
+    console.error('Error al obtener citas del profesional (hoy):', error);
+    return res.status(500).json({ message: 'Error al obtener citas' });
+  }
+}
 
 const getPatientAppointments = async (req, res) => {
   try {
@@ -267,9 +300,62 @@ const updateAppointment = async (req, res) => {
       updates.remainingBalance = Math.max(sc - pa, 0);
     }
 
-    // Actualizar (los hooks del modelo ajustan completedAt si cambia status)
-    await appt.update(updates);
-    await appt.reload();
+    // ===== Ajuste de saldos por cambio a/desde completed & attended =====
+    const prevStatus   = appt.status;
+    const prevAttended = appt.attended === true;
+    const prevCost     = toAmount(appt.sessionCost) ?? 0;
+    const prevProfId   = appt.professionalId;
+
+    const nextStatus   = updates.status          ?? prevStatus;
+    const nextAttended = updates.attended !== undefined ? updates.attended : prevAttended;
+    const nextCost     = updates.sessionCost !== undefined ? (updates.sessionCost ?? 0) : prevCost;
+    const nextProfId   = updates.professionalId ?? prevProfId;
+
+    const includePrev = prevStatus === 'completed' && prevAttended;
+    const includeNext = nextStatus === 'completed' && nextAttended;
+
+    await sequelize.transaction(async (t) => {
+      // 1) Persistir cita
+      await appt.update(updates, { transaction: t });
+      await appt.reload({ transaction: t });
+
+      // 2) Helper que usa commission del usuario (entero %) para saldoPendiente
+      const applyDelta = async (userId, delta) => {
+        if (!userId || !delta) return;
+
+        const prof = await User.findByPk(userId, {
+          transaction: t,
+          lock: t.LOCK.UPDATE,
+        });
+        if (!prof) return;
+
+        const currentTotal = toAmount(prof.saldoTotal) ?? 0;
+        const newTotal = round2(currentTotal + delta);
+
+        // commission: entero 0..100 (si viene null/undefined, usar 0)
+        let commissionInt = parseInt(prof.commission ?? 0, 10);
+        if (isNaN(commissionInt)) commissionInt = 0;
+        commissionInt = Math.max(0, Math.min(100, commissionInt));
+        const commissionRate = commissionInt / 100;
+
+        const newPend = round2(newTotal * commissionRate);
+
+        await prof.update(
+          { saldoTotal: newTotal, saldoPendiente: newPend },
+          { transaction: t }
+        );
+      };
+
+      if (prevProfId !== nextProfId) {
+        if (includePrev && prevCost) await applyDelta(prevProfId, -prevCost);
+        if (includeNext && nextCost) await applyDelta(nextProfId,  +nextCost);
+      } else {
+        const before = includePrev ? prevCost : 0;
+        const after  = includeNext ? nextCost : 0;
+        const delta  = round2(after - before);
+        if (delta !== 0) await applyDelta(prevProfId, delta);
+      }
+    });
 
     return res.json(toAppointmentDTO(appt));
   } catch (error) {
@@ -372,6 +458,7 @@ const getUpcomingAppointments = async (req, res) => {
 module.exports = {
   getAllAppointments,
   getProfessionalAppointments,
+  getTodayProfessionalAppointments,
   getPatientAppointments,
   createAppointment,
   updateAppointment,

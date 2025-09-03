@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import userService from '../services/user.service';
+import userService, { User } from '../services/user.service';
 import Button from '../components/common/Button';
+import toast from 'react-hot-toast';
 
 const FinancialPagosPage: React.FC = () => {
   const [professionals, setProfessionals] = useState<any[]>([]);
@@ -14,22 +15,24 @@ const FinancialPagosPage: React.FC = () => {
   }, []);
 
   const fetchProfessionals = async () => {
-    setLoading(true);
-    const users = await userService.getUsers();
-    const pros = users.filter((u: any) => u.role === 'professional');
-    setProfessionals(pros);
-    // Calcular la suma de todas las deudas de comisión
-    let totalDeuda = 0;
-    pros.forEach((prof: any) => {
-      const saldo = Number(prof.saldoTotal) || 0;
-      const comision = Number(prof.commission) || 0;
-      const abonosAcumulados = Number(prof.saldoPendiente) || 0;
-      const deudaComision = Math.max(saldo * (comision / 100) - abonosAcumulados, 0);
-      totalDeuda += deudaComision;
-    });
+  setLoading(true);
+  try {
+    const users = await userService.getProfessionals();
+    setProfessionals(users);
+
+    const totalDeuda = users.reduce((acc: number, p: any) => {
+      const pend = p?.saldoPendiente;
+      return acc + pend;
+    }, 0);
+
     setTotalDeudaComision(totalDeuda);
+  } catch (err) {
+    console.error('Error cargando profesionales:', err);
+    toast.error('Error al cargar profesionales');
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   const handleAbonoChange = (id: string, value: string) => {
     setAbonos({ ...abonos, [id]: value });
@@ -41,7 +44,6 @@ const FinancialPagosPage: React.FC = () => {
     if (abono > 0) {
       await userService.abonarComision(id, abono);
       // Actualizar el saldo total del profesional localmente
-      setProfessionals(prev => prev.map(prof => prof.id === id ? { ...prof, saldoTotal: (Number(prof.saldoTotal) || 0) - abono } : prof));
       await fetchProfessionals();
       setAbonos({ ...abonos, [id]: '' });
     }
@@ -70,17 +72,13 @@ const FinancialPagosPage: React.FC = () => {
               <tr><td colSpan={5} className="text-center py-4">Cargando...</td></tr>
             ) : professionals.length === 0 ? (
               <tr><td colSpan={5} className="text-center py-4">No hay profesionales registrados</td></tr>
-            ) : professionals.map((prof: any) => {
-              const saldo = Number(prof.saldoTotal) || 0;
-              const comision = Number(prof.commission) || 0;
-              const abonosAcumulados = Number(prof.saldoPendiente) || 0;
-              const deudaComision = Math.max(saldo * (comision / 100) - abonosAcumulados, 0);
+            ) : professionals.map((prof: User) => {
               return (
                 <tr key={prof.id} className="border-b hover:bg-blue-50 transition-colors">
-                  <td className="px-4 py-2 font-medium text-gray-800 whitespace-nowrap">{prof.name}</td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">${saldo.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
-                  <td className="px-4 py-2 text-center whitespace-nowrap">{comision}%</td>
-                  <td className="px-4 py-2 text-right text-red-600 font-semibold whitespace-nowrap">${deudaComision.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
+                  <td className="text-center px-4 py-2 font-medium text-gray-800 whitespace-nowrap">{prof.name}</td>
+                  <td className="text-center px-4 py-2 whitespace-nowrap">${prof.saldoTotal.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
+                  <td className="text-center px-4 py-2 whitespace-nowrap">{prof.commission}%</td>
+                  <td className="text-center px-4 py-2 text-red-600 font-semibold whitespace-nowrap">${prof.saldoPendiente.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
                   <td className="px-4 py-2">
                     <div className="flex gap-2 items-center justify-end">
                       <input

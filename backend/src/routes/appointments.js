@@ -6,6 +6,7 @@ const { verifyToken } = require('../controllers/authController');
 const {
   getAllAppointments,
   getProfessionalAppointments,
+  getTodayProfessionalAppointments,
   getPatientAppointments,
   createAppointment,
   updateAppointment,
@@ -19,6 +20,7 @@ router.use(verifyToken);
 
 // Rutas públicas (requieren autenticación pero no roles específicos)
 router.get('/professional/:professionalId', getProfessionalAppointments);
+router.get('/professional/today/:professionalId', getTodayProfessionalAppointments);
 router.get('/patient/:patientId', getPatientAppointments);
 router.get('/slots/:professionalId', getAvailableSlots);
 router.get('/upcoming', getUpcomingAppointments);

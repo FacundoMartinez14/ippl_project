@@ -11,8 +11,8 @@ export interface User {
   status: Status;
   createdAt: string;
   commission?: number; // porcentaje IPPL
-  saldoTotal?: number;
-  saldoPendiente?: number;
+  saldoTotal: number;
+  saldoPendiente: number;
 }
 
 export interface CreateUserData {
@@ -33,6 +33,17 @@ export interface UpdateUserData {
 }
 
 const userService = {
+
+  getUserById: async (id: number): Promise<User> => {
+    const response = await api.get(`/users/${id}`)
+    return response.data;
+  },
+
+  getProfessionals: async (): Promise<User[]> =>{
+    const response = await api.get('/users/professionals');
+    return response.data;
+  },
+
   getUsers: async (): Promise<User[]> => {
     const response = await api.get('/users');
     return response.data.users;
