@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
@@ -9,6 +10,7 @@ import { Appointment } from '../../types/Appointment';
 import { ArrowLeftIcon, ClockIcon, UserIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { iif } from '../../utils/functions';
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -42,11 +44,15 @@ const EventComponent = ({ event }: any) => {
         {moment(event.start).format('HH:mm')}–{moment(event.end).format('HH:mm')}
       </div>
       <div className="text-xs">
-        {appointment.type === 'regular'
-          ? 'Regular'
-          : appointment.type === 'first_time'
-          ? 'Primera Vez'
-          : 'Emergencia'}
+        {
+        iif(
+          appointment.type === 'regular',
+          'Regular',
+          appointment.type === 'first_time'
+            ? 'Primera Vez'
+            : 'Emergencia'
+        )
+        }
       </div>
     </div>
   );
@@ -73,8 +79,8 @@ const AppointmentsCalendar = () => {
       
       // Convertir las citas al formato que espera el calendario
       const formattedAppointments = data.map(appointment => {
-        let start = toLocalDate(appointment.date, appointment.startTime);
-        let end   = toLocalDate(appointment.date, appointment.endTime);
+        const start = toLocalDate(appointment.date, appointment.startTime);
+        let end = toLocalDate(appointment.date, appointment.endTime);
 
         // Garantizar end > start (y evitar “doble día” por igualdades)
         if (end <= start) {
@@ -123,34 +129,34 @@ const AppointmentsCalendar = () => {
     };
 
     return (
-      <div className="flex justify-between items-center mb-4 p-2 bg-gray-50 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 p-2 bg-gray-50 rounded-lg space-y-3 sm:space-y-0">
         <div className="flex items-center gap-2">
           <button
             onClick={goToBack}
-            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-600 hover:bg-gray-200 rounded"
           >
             ←
           </button>
           <button
             onClick={goToCurrent}
-            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-600 hover:bg-gray-200 rounded"
           >
             Hoy
           </button>
           <button
             onClick={goToNext}
-            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-600 hover:bg-gray-200 rounded"
           >
             →
           </button>
-          <span className="text-lg font-semibold ml-4">
+          <span className="text-base sm:text-lg font-semibold ml-2 sm:ml-4">
             {toolbar.label}
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           <button
             onClick={() => toolbar.onView('month')}
-            className={`px-3 py-1 text-sm rounded ${
+            className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${
               view === 'month' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -158,7 +164,7 @@ const AppointmentsCalendar = () => {
           </button>
           <button
             onClick={() => toolbar.onView('week')}
-            className={`px-3 py-1 text-sm rounded ${
+            className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${
               view === 'week' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -166,7 +172,7 @@ const AppointmentsCalendar = () => {
           </button>
           <button
             onClick={() => toolbar.onView('day')}
-            className={`px-3 py-1 text-sm rounded ${
+            className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${
               view === 'day' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -174,7 +180,7 @@ const AppointmentsCalendar = () => {
           </button>
           <button
             onClick={() => toolbar.onView('agenda')}
-            className={`px-3 py-1 text-sm rounded ${
+            className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${
               view === 'agenda' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -194,34 +200,34 @@ const AppointmentsCalendar = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+    <div className="p-3 sm:p-4 md:p-6">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/professional')}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors w-fit"
           >
             <ArrowLeftIcon className="h-5 w-5 mr-2" />
             Volver al Dashboard
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Calendario de Citas</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Calendario de Citas</h1>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
         {/* Leyenda de tipos de citas */}
-        <div className="mb-4 flex gap-4">
+        <div className="mb-4 flex flex-wrap gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-100 border border-blue-200"></div>
-            <span className="text-sm text-gray-600">Regular</span>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-blue-100 border border-blue-200"></div>
+            <span className="text-xs sm:text-sm text-gray-600">Regular</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-100 border border-green-200"></div>
-            <span className="text-sm text-gray-600">Primera Vez</span>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-green-100 border border-green-200"></div>
+            <span className="text-xs sm:text-sm text-gray-600">Primera Vez</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-100 border border-red-200"></div>
-            <span className="text-sm text-gray-600">Emergencia</span>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-red-100 border border-red-200"></div>
+            <span className="text-xs sm:text-sm text-gray-600">Emergencia</span>
           </div>
         </div>
 
@@ -256,44 +262,44 @@ const AppointmentsCalendar = () => {
 
       {/* Modal para ver detalles de la cita */}
       {selectedAppointment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Detalles de la Cita</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-lg mx-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold flex-1 mr-3">Detalles de la Cita</h2>
               <button
                 onClick={() => setSelectedAppointment(null)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-500 flex-shrink-0"
               >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-3">
-                <UserIcon className="h-5 w-5 text-gray-400" />
+                <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Paciente</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedAppointment.patientName}</p>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">Paciente</label>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-900">{selectedAppointment.patientName}</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3">
-                <ClockIcon className="h-5 w-5 text-gray-400" />
+                <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Fecha y Hora</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">Fecha y Hora</label>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-900">
                     {moment(selectedAppointment.date).format('LLLL')}
                   </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3">
-                <div className={`h-5 w-5 rounded-full ${getAppointmentColor(selectedAppointment.type)}`} />
+                <div className={`h-4 w-4 sm:h-5 sm:w-5 rounded-full ${getAppointmentColor(selectedAppointment.type)}`} />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Tipo de Cita</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">Tipo de Cita</label>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-900">
                     {selectedAppointment.type === 'regular' ? 'Regular' : 
                      selectedAppointment.type === 'first_time' ? 'Primera Vez' : 'Emergencia'}
                   </p>
@@ -301,17 +307,17 @@ const AppointmentsCalendar = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <CurrencyDollarIcon className="h-5 w-5 text-gray-400" />
+                <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Costo</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">Costo</label>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-900">
                     ${selectedAppointment.sessionCost?.toFixed(2) || '0.00'}
                   </p>
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">Estado</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">Estado</label>
                 <span className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   selectedAppointment.status === 'completed' ? 'bg-green-100 text-green-800' :
                   selectedAppointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
@@ -325,13 +331,13 @@ const AppointmentsCalendar = () => {
               
               {selectedAppointment.notes && (
                 <div className="border-t pt-4 mt-4">
-                  <label className="block text-sm font-medium text-gray-700">Notas</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedAppointment.notes}</p>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">Notas</label>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-900">{selectedAppointment.notes}</p>
                 </div>
               )}
             </div>
             
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <button
                 onClick={() => setSelectedAppointment(null)}
                 className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"

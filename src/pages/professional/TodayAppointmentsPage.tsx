@@ -258,57 +258,60 @@ const AppointmentsPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+      <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <button
               onClick={() => navigate('/professional')}
-              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors w-fit"
             >
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               Volver al Dashboard
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Gestión de Citas
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4">
             <button
               onClick={() => setShowNewAppointmentModal(true)}
-              className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center justify-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Nueva Cita
+              <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              <span className="hidden sm:inline">Nueva Cita</span>
+              <span className="sm:hidden">Nueva</span>
             </button>
             <button
               onClick={handleRefresh}
-              className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center justify-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''} w-full sm:w-auto`}
               disabled={isRefreshing}
             >
-              <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Actualizar
+              <ArrowPathIcon className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar</span>
+              <span className="sm:hidden">Actualizar</span>
             </button>
             <button
               onClick={() => navigate('/professional/calendario')}
-              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors w-full sm:w-auto"
             >
-              <CalendarIcon className="h-5 w-5 mr-2" />
-              Ver Calendario
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              <span className="hidden sm:inline">Ver Calendario</span>
+              <span className="sm:hidden">Calendario</span>
             </button>
           </div>
         </div>
 
         {/* Filtros y Ordenamiento */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+          <div className="flex items-center gap-3 sm:gap-4">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as 'all' | 'upcoming' | 'past')}
-              className="rounded-lg border-gray-300 text-sm"
+              className="rounded-lg border-gray-300 text-xs sm:text-sm px-3 py-2"
             >
               <option value="all">Todas las citas</option>
               <option value="upcoming">Citas próximas</option>
@@ -317,14 +320,15 @@ const AppointmentsPage = () => {
           </div>
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+            className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900"
           >
             {sortOrder === 'asc' ? (
-              <ChevronUpIcon className="h-5 w-5 mr-1" />
+              <ChevronUpIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1" />
             ) : (
-              <ChevronDownIcon className="h-5 w-5 mr-1" />
+              <ChevronDownIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1" />
             )}
-            Ordenar por fecha
+            <span className="hidden sm:inline">Ordenar por fecha</span>
+            <span className="sm:hidden">Ordenar</span>
           </button>
         </div>
 
@@ -333,22 +337,22 @@ const AppointmentsPage = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Paciente
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fecha y Hora
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Tipo
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Precio
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -358,22 +362,22 @@ const AppointmentsPage = () => {
                   const status = getAppointmentStatus(appointment.date);
                   return (
                     <tr key={appointment.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0">
-                            <UserIcon className="h-6 w-6 text-gray-400" />
+                            <UserIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="ml-3 sm:ml-4">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900">
                               {appointment.patientName}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="hidden sm:table-cell px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <ClockIcon className="h-5 w-5 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">
+                          <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-2" />
+                          <span className="text-xs sm:text-sm text-gray-900">
                             {combineLocalDateTime(appointment.date, appointment.startTime)
                               .toLocaleString('es-ES', {
                                 weekday: 'long',
@@ -386,57 +390,59 @@ const AppointmentsPage = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.class}`}>
                           {status.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                         {appointment.type === 'regular' ? 'Regular' : 
                          appointment.type === 'first_time' ? 'Primera Vez' : 'Emergencia'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="hidden md:table-cell px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                         ${appointment.sessionCost?.toFixed(2) || '0.00'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => {
-                            setSelectedAppointmentForDescription(appointment);
-                            setShowDescriptionModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                          title="Ver descripción"
-                        >
-                          <EyeIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAppointment(appointment);
-                            setShowEditAppointmentModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                          title="Editar cita"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAppointmentForFinish(appointment);
-                            setPaymentAmount(appointment.sessionCost || 0);
-                            setShowFinishAppointmentModal(true);
-                          }}
-                          className="text-green-600 hover:text-green-900 mr-4"
-                          title="Finalizar cita"
-                        >
-                          <CheckCircleIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(appointment)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Eliminar cita"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
+                        <div className="flex flex-wrap gap-1 sm:gap-2 justify-end">
+                          <button
+                            onClick={() => {
+                              setSelectedAppointmentForDescription(appointment);
+                              setShowDescriptionModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="Ver descripción"
+                          >
+                            <EyeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setShowEditAppointmentModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="Editar cita"
+                          >
+                            <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAppointmentForFinish(appointment);
+                              setPaymentAmount(appointment.sessionCost || 0);
+                              setShowFinishAppointmentModal(true);
+                            }}
+                            className="text-green-600 hover:text-green-900 p-1"
+                            title="Finalizar cita"
+                          >
+                            <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(appointment)}
+                            className="text-red-600 hover:text-red-900 p-1"
+                            title="Eliminar cita"
+                          >
+                            <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -445,18 +451,19 @@ const AppointmentsPage = () => {
             </table>
           </div>
         ) : (
-          <div className="text-center py-12">
-            <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <div className="text-center py-8 sm:py-12">
+            <CalendarIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No hay citas</h3>
             <p className="mt-1 text-sm text-gray-500">
               No tienes ninguna cita registrada.
             </p>
             <button
               onClick={() => setShowNewAppointmentModal(true)}
-              className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-4 inline-flex items-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Agendar Nueva Cita
+              <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              <span className="hidden sm:inline">Agendar Nueva Cita</span>
+              <span className="sm:hidden">Nueva Cita</span>
             </button>
           </div>
         )}

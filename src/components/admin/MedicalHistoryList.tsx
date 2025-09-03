@@ -61,52 +61,52 @@ const MedicalHistoryList: React.FC<MedicalHistoryListProps> = ({ patientId, isAd
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Historial Médico</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <h2 className="text-lg sm:text-xl font-bold">Historial Médico</h2>
         <button
           onClick={handleAddNew}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm sm:text-base"
         >
           Nuevo Registro
         </button>
       </div>
 
       {histories.length === 0 ? (
-        <p className="text-gray-500 text-center py-4">No hay registros médicos disponibles.</p>
+        <p className="text-gray-500 text-center py-4 text-sm sm:text-base">No hay registros médicos disponibles.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {histories.map((history) => (
             <div
               key={history.id}
-              className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+              className="border rounded-lg p-3 sm:p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                <div className="flex-1 space-y-2 sm:space-y-3">
+                  <p className="text-xs sm:text-sm text-gray-500">
                     Fecha: {new Date(history.date).toLocaleDateString()}
                   </p>
-                  <div className="mt-2">
-                    <h3 className="font-semibold">Diagnóstico</h3>
-                    <p className="text-gray-700">{history.diagnosis}</p>
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base">Diagnóstico</h3>
+                    <p className="text-gray-700 text-sm sm:text-base">{history.diagnosis}</p>
                   </div>
-                  <div className="mt-2">
-                    <h3 className="font-semibold">Tratamiento</h3>
-                    <p className="text-gray-700">{history.treatment}</p>
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base">Tratamiento</h3>
+                    <p className="text-gray-700 text-sm sm:text-base">{history.treatment}</p>
                   </div>
                   {history.notes && (
-                    <div className="mt-2">
-                      <h3 className="font-semibold">Notas Adicionales</h3>
-                      <p className="text-gray-700">{history.notes}</p>
+                    <div>
+                      <h3 className="font-semibold text-sm sm:text-base">Notas Adicionales</h3>
+                      <p className="text-gray-700 text-sm sm:text-base">{history.notes}</p>
                     </div>
                   )}
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex gap-1 sm:gap-2 self-end sm:self-start">
                   <button
                     onClick={() => handleEdit(history)}
                     className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Editar"
                   >
-                    <PencilIcon className="h-5 w-5" />
+                    <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                   {isAdmin && (
                     <button
@@ -114,7 +114,7 @@ const MedicalHistoryList: React.FC<MedicalHistoryListProps> = ({ patientId, isAd
                       className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
                       title="Eliminar"
                     >
-                      <TrashIcon className="h-5 w-5" />
+                      <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
                   )}
                 </div>

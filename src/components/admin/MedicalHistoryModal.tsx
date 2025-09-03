@@ -72,18 +72,18 @@ const MedicalHistoryModal: React.FC<MedicalHistoryModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-4 sm:p-6 rounded-lg w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-start mb-4">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold flex-1 mr-3">
             {selectedHistory ? 'Editar Historial Médico' : 'Nuevo Registro Médico'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
+            className="text-gray-400 hover:text-gray-500 flex-shrink-0"
           >
             <span className="sr-only">Cerrar</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -96,7 +96,7 @@ const MedicalHistoryModal: React.FC<MedicalHistoryModalProps> = ({
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               required
             />
           </div>
@@ -106,7 +106,7 @@ const MedicalHistoryModal: React.FC<MedicalHistoryModalProps> = ({
             <textarea
               value={formData.diagnosis}
               onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               rows={3}
               required
             />
@@ -117,7 +117,7 @@ const MedicalHistoryModal: React.FC<MedicalHistoryModalProps> = ({
             <textarea
               value={formData.treatment}
               onChange={(e) => setFormData({ ...formData, treatment: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               rows={3}
               required
             />
@@ -128,23 +128,23 @@ const MedicalHistoryModal: React.FC<MedicalHistoryModalProps> = ({
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               rows={3}
             />
           </div>
 
-          <div className="flex justify-end space-x-3 mt-6">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm"
               disabled={isSubmitting}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Guardando...' : selectedHistory ? 'Actualizar' : 'Guardar'}
