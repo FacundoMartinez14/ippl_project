@@ -4,7 +4,7 @@ const path = require('path');
 const carouselDir = path.join(__dirname, '../../../public/images/carousel');
 
 // Obtener todas las imágenes del carrusel
-exports.getCarouselImages = (req, res) => {
+const getCarouselImages = (req, res) => {
   fs.readdir(carouselDir, (err, files) => {
     if (err) {
       console.error("Error al leer el directorio del carrusel:", err);
@@ -17,7 +17,7 @@ exports.getCarouselImages = (req, res) => {
 };
 
 // Eliminar una imagen del carrusel
-exports.deleteCarouselImage = (req, res) => {
+const deleteCarouselImage = (req, res) => {
   const { filename } = req.params;
 
   // Medida de seguridad para evitar path traversal
@@ -39,3 +39,22 @@ exports.deleteCarouselImage = (req, res) => {
     res.status(200).json({ message: `Imagen '${filename}' eliminada correctamente.` });
   });
 }; 
+
+const uploadCarrouselImages = (req,res) => {
+  if(!req.files || req.files.length === 0){
+    return res.status(400).json({message: "Ocurrió un error al cargar las imágenes del carrousel"});
+  }
+
+  const uploadedFiles = req.files.map(file => file.filename);
+
+  res.status(201).json({
+    message: 'Imágenes subidas correctamente.',
+    files: uploadedFiles,
+  });
+}
+
+module.exports = {
+  getCarouselImages,
+  deleteCarouselImage,
+  uploadCarrouselImages
+}

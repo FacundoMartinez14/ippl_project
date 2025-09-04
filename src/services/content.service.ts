@@ -10,7 +10,7 @@ const deleteCarouselImage = async (filename: string): Promise<void> => {
 };
 
 const uploadCarouselImage = async (formData: FormData): Promise<void> => {
-  await api.post('/api/upload/carousel', formData, {
+  await api.post('/upload/carousel', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

@@ -111,8 +111,6 @@ function App() {
             <Route path="estadisticas" element={<StatsPage />} />
             <Route path="solicitudes" element={<StatusRequestsManagement />} />
             <Route path="actividad" element={<ActivityPage />} />
-            <Route path="nuevo" element={<ContentManagement/>}/>
-            <Route path="editar/:id" element={<ContentManagement/>}/>
           </Route>
 
           {/* Financial routes */}
@@ -135,6 +133,8 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<ContentDashboard />} />
+            <Route path="nuevo" element={<ContentManagement/>}/>
+            <Route path="editar/:id" element={<ContentManagement/>}/>
           </Route>
 
           {/* Professional routes */}
