@@ -229,6 +229,7 @@ const AppointmentsPage = () => {
   };
 
   const filteredAppointments = appointments
+    .filter(appointment => appointment.status !== 'completed')
     .filter(appointment => {
     const appointmentDate = new Date(appointment.date);
     const now = new Date();
