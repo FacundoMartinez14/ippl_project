@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import userService, { User } from '../services/user.service';
+import userService, { UpdateUserData, User } from '../services/user.service';
 import Button from '../components/common/Button';
 import toast from 'react-hot-toast';
 
 const FinancialPagosPage: React.FC = () => {
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [comissionById, setComissionById] = useState<Record<string | number, number>>({});
   const [abonos, setAbonos] = useState<{ [key: string]: string }>({});
   const [saving, setSaving] = useState<{ [key: string]: boolean }>({});
   const [totalDeudaComision, setTotalDeudaComision] = useState(0);
@@ -37,6 +38,23 @@ const FinancialPagosPage: React.FC = () => {
   const handleAbonoChange = (id: string, value: string) => {
     setAbonos({ ...abonos, [id]: value });
   };
+
+  const getCommision = (p: { id: string | number; commission?: number }) =>
+  comissionById[p.id] ?? (p.commission ?? 0);
+
+  const handleCommision = async (userId: string, comission: number) =>{
+    const updateData: UpdateUserData = {};
+    try{
+      updateData.commission = comission
+      let userUpdated = await userService.updateUser(userId, updateData);
+      if (userUpdated.commission == comissionById[userUpdated.id]){
+        toast.success("Comision actualizada correctamente")
+      }
+    } catch (e) {
+      console.error('Error asignando comision:', e);
+      toast.error('Error asignando comision');
+    }
+  }
 
   const handleAbonar = async (id: string) => {
     setSaving({ ...saving, [id]: true });
@@ -77,7 +95,35 @@ const FinancialPagosPage: React.FC = () => {
                 <tr key={prof.id} className="border-b hover:bg-blue-50 transition-colors">
                   <td className="text-center px-4 py-2 font-medium text-gray-800 whitespace-nowrap">{prof.name}</td>
                   <td className="text-center px-4 py-2 whitespace-nowrap">${prof.saldoTotal.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
-                  <td className="text-center px-4 py-2 whitespace-nowrap">{prof.commission}%</td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="flex items-center">
+                        <input
+                          type="number"
+                          className="w-20 border rounded px-2 py-1 text-right"
+                          value={getCommision(prof)}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setComissionById(prev => ({
+                              ...prev,
+                              [prof.id]: v === '' ? 0 : Number(v),
+                            }));
+                          }}
+                          min={0}
+                          step={0.01}
+                          inputMode="decimal"
+                        />
+                        <span className="ml-1">%</span>
+                      </div>
+                       <Button
+                        onClick={() => handleCommision(prof.id, getCommision(prof))}
+                        className="px-2 py-1 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        Actualizar
+                      </Button>
+                    </div>
+                  </td>
+
                   <td className="text-center px-4 py-2 text-red-600 font-semibold whitespace-nowrap">${prof.saldoPendiente.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
                   <td className="px-4 py-2">
                     <div className="flex gap-2 items-center justify-end">

@@ -70,12 +70,29 @@ const CompletedAppointmentsPage = () => {
     );
   }
 
+  const filteredAppointments = appointments
+  .filter(a => a.patientName.toLowerCase().includes(search.toLowerCase()))
+  .filter(a => typeFilter === "todos" || a.type === typeFilter)
+  .filter(a => attendedFilter === "todos" || (attendedFilter === "si" ? a.attended : !a.attended));
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('es-ES', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+
+const badge = (ok?: boolean) =>
+  `px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+    ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+  }`;
+
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-3">
+          {/* Bloque izquierda */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
             <button
               onClick={() => navigate('/professional')}
               className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -83,23 +100,26 @@ const CompletedAppointmentsPage = () => {
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               Volver al Dashboard
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Citas Finalizadas
-              </h1>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Citas Finalizadas</h1>
           </div>
-          <div className="flex items-center gap-4">
+
+          {/* Bloque derecha */}
+          <div className="flex items-center gap-3 md:justify-end">
             <button
               onClick={handleRefresh}
-              className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${
+                isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               disabled={isRefreshing}
             >
-              <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <ArrowPathIcon
+                className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
               Actualizar
             </button>
           </div>
         </div>
+
 
         {appointments.length > 0 ? (
           <>
@@ -133,84 +153,53 @@ const CompletedAppointmentsPage = () => {
                 </select>
               </div>
             </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Paciente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha y Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Asistió
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pago
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Saldo Pendiente
-                  </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                  {appointments
-                    .filter(a => a.patientName.toLowerCase().includes(search.toLowerCase()))
-                    .filter(a => typeFilter === "todos" || a.type === typeFilter)
-                    .filter(a => attendedFilter === "todos" || (attendedFilter === "si" ? a.attended : !a.attended))
-                    .map((appointment) => (
-                  <tr key={appointment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <UserIcon className="h-6 w-6 text-gray-400" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {appointment.patientName}
+          {/* Tabla: visible en desktop */}
+            <div className="hidden md:block">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha y Hora</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asistió</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pago</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Pendiente</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredAppointments.map((appointment) => (
+                      <tr key={appointment.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <UserIcon className="h-6 w-6 text-gray-400" />
+                            <div className="ml-4 text-sm font-medium text-gray-900">
+                              {appointment.patientName}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <ClockIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">
-                          {new Date(appointment.date).toLocaleDateString('es-ES', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {appointment.type === 'regular' ? 'Regular' : 
-                       appointment.type === 'first_time' ? 'Primera Vez' : 'Emergencia'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        appointment.attended ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {appointment.attended ? 'Sí' : 'No'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${appointment.paymentAmount?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${appointment.remainingBalance?.toFixed(2) || '0.00'}
-                    </td>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <ClockIcon className="h-5 w-5 text-gray-400 mr-2" />
+                            <span className="text-sm text-gray-900">{formatDate(appointment.date)}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {appointment.type === 'regular' ? 'Regular' :
+                          appointment.type === 'first_time' ? 'Primera Vez' : 'Emergencia'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">  
+                          <span className={badge(appointment.attended)}>
+                            {appointment.attended ? 'Sí' : 'No'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ${appointment.paymentAmount?.toFixed(2) || '0.00'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ${appointment.remainingBalance?.toFixed(2) || '0.00'}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           {appointment.attended && getPatientTotalDebt(appointment.patientId) > 0 ? (
                             <button
@@ -227,11 +216,81 @@ const CompletedAppointmentsPage = () => {
                             </button>
                           ) : null}
                         </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {/* Cards: visible en mobile/tablet */}
+            <div className="block md:hidden space-y-3">
+              {filteredAppointments.map((appointment) => (
+                <div
+                  key={appointment.id}
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start gap-3">
+                    <UserIcon className="h-6 w-6 text-gray-400 shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">
+                        {appointment.patientName}
+                      </h3>
+                      <div className="mt-1 flex items-center text-sm text-gray-600">
+                        <ClockIcon className="h-4 w-4 mr-1 shrink-0" />
+                        <span className="truncate">{formatDate(appointment.date)}</span>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="text-xs rounded px-2 py-1 bg-gray-100 text-gray-700">
+                          {appointment.type === 'regular'
+                            ? 'Regular'
+                            : appointment.type === 'first_time'
+                            ? 'Primera Vez'
+                            : 'Emergencia'}
+                        </span>
+                        <span className={badge(appointment.attended)}>
+                          {appointment.attended ? 'Asistió: Sí' : 'Asistió: No'}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                        <div className="rounded bg-gray-50 p-2">
+                          <div className="text-gray-500">Pago</div>
+                          <div className="font-medium text-gray-900">
+                            ${appointment.paymentAmount?.toFixed(2) || '0.00'}
+                          </div>
+                        </div>
+                        <div className="rounded bg-gray-50 p-2">
+                          <div className="text-gray-500">Saldo</div>
+                          <div className="font-medium text-gray-900">
+                            ${appointment.remainingBalance?.toFixed(2) || '0.00'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Acciones */}
+                      <div className="mt-3 flex justify-end">
+                        {appointment.attended && getPatientTotalDebt(appointment.patientId) > 0 ? (
+                          <button
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setEditPaymentAmount(appointment.paymentAmount || 0);
+                              setEditRemainingBalance(appointment.remainingBalance || 0);
+                              setShowEditPaymentModal(true);
+                            }}
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                            title="Actualizar pago"
+                          >
+                            <PencilIcon className="h-5 w-5 mr-1" />
+                            Actualizar pago
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         ) : (
           <div className="text-center py-12">

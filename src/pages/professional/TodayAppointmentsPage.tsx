@@ -19,7 +19,8 @@ import {
   EyeIcon,
   XMarkIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  ClipboardIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -229,7 +230,7 @@ const AppointmentsPage = () => {
   };
 
   const filteredAppointments = appointments
-    .filter(appointment => appointment.status !== 'completed')
+    .filter(appointment => appointment.status != 'completed')
     .filter(appointment => {
     const appointmentDate = new Date(appointment.date);
     const now = new Date();
@@ -257,12 +258,29 @@ const AppointmentsPage = () => {
     );
   }
 
+  const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+const badge = (ok: boolean) =>
+  `px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+    ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+  }`;
+
+
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+          {/* Bloque izquierda */}
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
             <button
               onClick={() => navigate('/professional')}
               className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -271,12 +289,12 @@ const AppointmentsPage = () => {
               Volver al Dashboard
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Gestión de Citas
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">Gestión de Citas</h1>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+
+          {/* Bloque derecha */}
+          <div className="flex flex-wrap items-center gap-4 md:justify-end">
             <button
               onClick={() => setShowNewAppointmentModal(true)}
               className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
@@ -286,10 +304,14 @@ const AppointmentsPage = () => {
             </button>
             <button
               onClick={handleRefresh}
-              className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${
+                isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               disabled={isRefreshing}
             >
-              <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <ArrowPathIcon
+                className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
               Actualizar
             </button>
             <button
@@ -301,6 +323,7 @@ const AppointmentsPage = () => {
             </button>
           </div>
         </div>
+
 
         {/* Filtros y Ordenamiento */}
         <div className="flex justify-between items-center mb-6">
@@ -327,130 +350,253 @@ const AppointmentsPage = () => {
             Ordenar por fecha
           </button>
         </div>
-
+        
         {filteredAppointments.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Paciente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha y Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Precio
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {appointments.map((appointment) => {
-                  const status = getAppointmentStatus(appointment.status);
-                  return (
-                    <tr key={appointment.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <UserIcon className="h-6 w-6 text-gray-400" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {appointment.patientName}
-                            </div>
-                          </div>
+          <>
+            {/* ===== MOBILE/TABLET: CARDS ===== */}
+            <div className="block md:hidden space-y-3">
+              {filteredAppointments.map((appointment) => {
+                const status = getAppointmentStatus(appointment.status);
+                return (
+                  <div
+                    key={appointment.id}
+                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    {/* Paciente */}
+                    <div className="flex items-start gap-3">
+                      <UserIcon className="h-6 w-6 text-gray-400 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">
+                          {appointment.patientName}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <ClockIcon className="h-5 w-5 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">
-                            {combineLocalDateTime(appointment.date, appointment.startTime)
-                              .toLocaleString('es-ES', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                          </span>
+                      </div>
+                    </div>
+
+                    {/* Fecha y hora */}
+                    <div className="mt-2 flex items-center text-sm text-gray-700">
+                      <ClockIcon className="h-4 w-4 mr-1 shrink-0 text-gray-400" />
+                      <span className="truncate">
+                        {combineLocalDateTime(appointment.date, appointment.startTime).toLocaleString(
+                          'es-ES',
+                          {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Estado + Tipo */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.class}`}
+                      >
+                        {status.label}
+                      </span>
+                      <span className="text-xs rounded px-2 py-1 bg-gray-100 text-gray-700">
+                        {appointment.type === 'regular'
+                          ? 'Regular'
+                          : appointment.type === 'first_time'
+                          ? 'Primera Vez'
+                          : 'Emergencia'}
+                      </span>
+                    </div>
+
+                    {/* Precio */}
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-gray-500">Precio</div>
+                        <div className="font-medium text-gray-900">
+                          ${appointment.sessionCost?.toFixed(2) || '0.00'}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.class}`}>
-                          {status.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {appointment.type === 'regular' ? 'Regular' : 
-                         appointment.type === 'first_time' ? 'Primera Vez' : 'Emergencia'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${appointment.sessionCost?.toFixed(2) || '0.00'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => {
-                            setSelectedAppointmentForDescription(appointment);
-                            setShowDescriptionModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                          title="Ver descripción"
-                        >
-                          <EyeIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAppointment(appointment);
-                            setShowEditAppointmentModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                          title="Editar cita"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAppointmentForFinish(appointment);
-                            setPaymentAmount(appointment.sessionCost || 0);
-                            setShowFinishAppointmentModal(true);
-                          }}
-                          className="text-green-600 hover:text-green-900 mr-4"
-                          title="Finalizar cita"
-                        >
-                          <CheckCircleIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(appointment)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Eliminar cita"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </td>
+                      </div>
+                    </div>
+
+                    {/* Acciones (mismas que en la tabla) */}
+                    <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setSelectedAppointmentForDescription(appointment);
+                          setShowDescriptionModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                        title="Ver descripción"
+                      >
+                        <EyeIcon className="h-5 w-5" />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedAppointment(appointment);
+                          setShowEditAppointmentModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                        title="Editar cita"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedAppointmentForFinish(appointment);
+                          setPaymentAmount(appointment.sessionCost || 0);
+                          setShowFinishAppointmentModal(true);
+                        }}
+                        className="text-green-600 hover:text-green-900 inline-flex items-center"
+                        title="Finalizar cita"
+                      >
+                        <CheckCircleIcon className="h-5 w-5" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteClick(appointment)}
+                        className="text-red-600 hover:text-red-900 inline-flex items-center"
+                        title="Eliminar cita"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ===== DESKTOP: TABLA ORIGINAL ===== */}
+            <div className="hidden md:block">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  {/* ⬇️ tu thead/tbody original sin cambios */}
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Paciente
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha y Hora
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredAppointments.map((appointment) => {
+                      const status = getAppointmentStatus(appointment.status);
+                      return (
+                        <tr key={appointment.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0">
+                                <UserIcon className="h-6 w-6 text-gray-400" />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {appointment.patientName}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <ClockIcon className="h-5 w-5 text-gray-400 mr-2" />
+                              <span className="text-sm text-gray-900">
+                                {combineLocalDateTime(appointment.date, appointment.startTime).toLocaleString(
+                                  'es-ES',
+                                  {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.class}`}
+                            >
+                              {status.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {appointment.type === 'regular'
+                              ? 'Regular'
+                              : appointment.type === 'first_time'
+                              ? 'Primera Vez'
+                              : 'Emergencia'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${appointment.sessionCost?.toFixed(2) || '0.00'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                setSelectedAppointmentForDescription(appointment);
+                                setShowDescriptionModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              title="Ver descripción"
+                            >
+                              <EyeIcon className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedAppointment(appointment);
+                                setShowEditAppointmentModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              title="Editar cita"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedAppointmentForFinish(appointment);
+                                setPaymentAmount(appointment.sessionCost || 0);
+                                setShowFinishAppointmentModal(true);
+                              }}
+                              className="text-green-600 hover:text-green-900 mr-4"
+                              title="Finalizar cita"
+                            >
+                              <CheckCircleIcon className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(appointment)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Eliminar cita"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         ) : (
+          // ===== EMPTY STATE (sirve para mobile y desktop) =====
           <div className="text-center py-12">
             <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No hay citas</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              No tienes ninguna cita registrada.
-            </p>
+            <p className="mt-1 text-sm text-gray-500">No tienes ninguna cita registrada.</p>
             <button
               onClick={() => setShowNewAppointmentModal(true)}
               className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
@@ -460,6 +606,7 @@ const AppointmentsPage = () => {
             </button>
           </div>
         )}
+
       </div>
 
       {/* Modal para crear nueva cita */}

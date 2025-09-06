@@ -108,46 +108,47 @@ const AppointmentsCalendar = () => {
     setSelectedAppointment(event.resource);
   };
 
-  // Personalizar la barra de herramientas del calendario
+  // Personalizar la barra de herramientas del calendario (responsive)
   const CustomToolbar = (toolbar: any) => {
-    const goToBack = () => {
-      toolbar.onNavigate('PREV');
-    };
-
-    const goToNext = () => {
-      toolbar.onNavigate('NEXT');
-    };
-
-    const goToCurrent = () => {
-      toolbar.onNavigate('TODAY');
-    };
+    const goToBack = () => toolbar.onNavigate('PREV');
+    const goToNext = () => toolbar.onNavigate('NEXT');
+    const goToCurrent = () => toolbar.onNavigate('TODAY');
 
     return (
-      <div className="flex justify-between items-center mb-4 p-2 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goToBack}
-            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
-          >
-            ←
-          </button>
-          <button
-            onClick={goToCurrent}
-            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
-          >
-            Hoy
-          </button>
-          <button
-            onClick={goToNext}
-            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
-          >
-            →
-          </button>
-          <span className="text-lg font-semibold ml-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4 p-2 bg-gray-50 rounded-lg">
+        {/* Navegación + label */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goToBack}
+              className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
+              aria-label="Anterior"
+            >
+              ←
+            </button>
+            <button
+              onClick={goToCurrent}
+              className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
+            >
+              Hoy
+            </button>
+            <button
+              onClick={goToNext}
+              className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
+              aria-label="Siguiente"
+            >
+              →
+            </button>
+          </div>
+
+          {/* Label centrado y truncado en mobile */}
+          <span className="text-base md:text-lg font-semibold ml-2 md:ml-4 truncate max-w-[60vw] md:max-w-none text-center md:text-left">
             {toolbar.label}
           </span>
         </div>
-        <div className="flex gap-2">
+
+        {/* Selección de vista */}
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <button
             onClick={() => toolbar.onView('month')}
             className={`px-3 py-1 text-sm rounded ${
@@ -195,8 +196,9 @@ const AppointmentsCalendar = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      {/* Header responsive */}
+      <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
           <button
             onClick={() => navigate('/professional')}
             className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -208,50 +210,49 @@ const AppointmentsCalendar = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        {/* Leyenda de tipos de citas */}
-        <div className="mb-4 flex gap-4">
+      <div className="bg-white rounded-lg shadow p-4 md:p-6">
+      {/* Leyenda responsive */}
+        <div className="mb-4 flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-blue-100 border border-blue-200"></div>
             <span className="text-sm text-gray-600">Regular</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-100 border border-green-200"></div>
-            <span className="text-sm text-gray-600">Primera Vez</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-100 border border-red-200"></div>
-            <span className="text-sm text-gray-600">Emergencia</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-green-100 border border-green-200"></div>
+          <span className="text-sm text-gray-600">Primera Vez</span>
         </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-red-100 border border-red-200"></div>
+          <span className="text-sm text-gray-600">Emergencia</span>
+        </div>
+      </div>
 
-        <Calendar
-          localizer={localizer}
-          events={appointments}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 'calc(100vh - 250px)' }}
-          onSelectEvent={handleSelectEvent}
-          components={{
-            event: EventComponent,
-            toolbar: CustomToolbar
-          }}
-          onView={(newView) => setView(newView)}
-          view={view}
-          messages={{
-            next: "Siguiente",
-            previous: "Anterior",
-            today: "Hoy",
-            month: "Mes",
-            week: "Semana",
-            day: "Día",
-            agenda: "Agenda",
-            date: "Fecha",
-            time: "Hora",
-            event: "Evento",
-            noEventsInRange: "No hay citas en este rango de fechas."
-          }}
-        />
+        <div className="h-[60vh] md:h-[calc(100vh-250px)]">
+          <Calendar
+            localizer={localizer}
+            events={appointments}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: '100%' }}
+            onSelectEvent={handleSelectEvent}
+            components={{ event: EventComponent, toolbar: CustomToolbar }}
+            onView={(newView) => setView(newView)}
+            view={view}
+            messages={{
+              next: "Siguiente",
+              previous: "Anterior",
+              today: "Hoy",
+              month: "Mes",
+              week: "Semana",
+              day: "Día",
+              agenda: "Agenda",
+              date: "Fecha",
+              time: "Hora",
+              event: "Evento",
+              noEventsInRange: "No hay citas en este rango de fechas."
+            }}
+          />
+        </div>
       </div>
 
       {/* Modal para ver detalles de la cita */}
