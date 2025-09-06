@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../config/api';
 import appointmentsService from './appointments.service';
 
 export interface SystemStats {

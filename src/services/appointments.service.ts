@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../config/api';
 import { Appointment } from '../types/Appointment';
 
 export interface CreateAppointmentDTO {

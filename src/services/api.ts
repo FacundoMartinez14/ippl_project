@@ -35,29 +35,17 @@ const api = axios.create({
 	headers: { 'Content-Type': 'application/json' },
 });
 
-// ===== REQUEST interceptor (logs) =====
 api.interceptors.request.use(
 	(config) => {
 		const token = localStorage.getItem('token');
 		const path = window.location.pathname;
 		const inProtected = isProtectedPath(path);
 
-		console.log('[API][REQ]', {
-			path,
-			inProtected,
-			hasToken: !!token,
-		});
-
 		if (token) {
 			const expired = isTokenExpired(token);
-			console.log('[API][REQ] tokenStatus', { expired });
 			if (expired) {
 				localStorage.removeItem('token');
 				if (inProtected && path !== '/login') {
-					console.warn(
-						'[API][REQ] REDIRECT by expired token on protected path:',
-						path
-					);
 					window.location.replace('/login');
 					return Promise.reject(
 						new axios.Cancel('redirect/login (expired token)')
@@ -81,25 +69,11 @@ api.interceptors.response.use(
 		const data = error?.response?.data;
 		const path = window.location.pathname;
 		const inProtected = isProtectedPath(path);
-
-		console.log('[API][RES][ERR]', {
-			path,
-			inProtected,
-			status,
-			data,
-			url: error?.config?.url,
-			method: error?.config?.method,
-		});
-
 		if (
 			(status === 401 || status === 403) &&
 			inProtected &&
 			path !== '/login'
 		) {
-			console.warn(
-				'[API][RES][ERR] REDIRECT by backend 401/403 on protected path:',
-				path
-			);
 			localStorage.removeItem('token');
 			window.location.replace('/login');
 			return;

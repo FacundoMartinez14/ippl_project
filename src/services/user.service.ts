@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../config/api';
 
 export type Roles = 'admin' | 'professional' | 'content_manager' | 'financial';
 export type Status = 'active' | 'inactive';

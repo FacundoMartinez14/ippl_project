@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../config/api';
 
 const getCarouselImages = async (): Promise<string[]> => {
 	const response = await api.get('/content/carousel');
