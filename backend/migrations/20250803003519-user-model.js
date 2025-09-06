@@ -34,7 +34,8 @@ module.exports = {
       },
       commission: {
         type: Sequelize.DECIMAL(5,2),
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0,
       },
       saldoTotal: {
         type: Sequelize.DECIMAL(12,2),

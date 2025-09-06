@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import patientsService, { Patient } from '../../services/patients.service';
-import statusRequestService from '../../services/statusRequest.service';
+import patientsService from '../../services/patients.service';
+import { Patient } from '../../types/Patient';
 import { 
   UserIcon, 
-  MagnifyingGlassIcon,
   ArrowPathIcon,
   ArrowLeftIcon,
   ClipboardDocumentListIcon,
@@ -16,7 +15,6 @@ import {
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../Modal';
-import MedicalHistoryModal from '../admin/MedicalHistoryModal';
 import MedicalHistoryList from '../admin/MedicalHistoryList';
 import axios from 'axios';
 import { API_URL } from '../../config/config';
@@ -102,10 +100,6 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ isOpen, onClose, 
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
           >
-            <span className="sr-only">Cerrar</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
           </button>
         </div>
 
@@ -210,10 +204,6 @@ const FrequencyChangeModal: React.FC<FrequencyChangeModalProps> = ({ isOpen, onC
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-            <span className="sr-only">Cerrar</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
           </button>
         </div>
 
@@ -307,10 +297,11 @@ const StatusActivationModal: React.FC<StatusChangeModalProps> = ({ isOpen, onClo
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
+      <div className="p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-green-900">
+            <h3 className="text-base sm:text-lg font-semibold text-green-900">
               Solicitar Alta para el Paciente
             </h3>
             <p className="mt-1 text-sm text-gray-500">
@@ -319,25 +310,23 @@ const StatusActivationModal: React.FC<StatusChangeModalProps> = ({ isOpen, onClo
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
+            className="self-end sm:self-auto text-gray-400 hover:text-gray-500"
           >
-            <span className="sr-only">Cerrar</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
           </button>
         </div>
 
+        {/* Resumen Paciente */}
         <div className="mb-6">
-          <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <UserPlusIcon className="h-6 w-6 text-green-600" />
+          <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+            <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
+              <UserPlusIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h4 className="text-sm font-medium text-gray-900">Paciente</h4>
-              <p className="text-lg font-semibold text-gray-900">{patient.name}</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 truncate">{patient.name}</p>
               <p className="text-sm text-gray-500">
-                Estado actual: <span className={`font-medium ${getStatusColor(patient.status)}`}>
+                Estado actual:{' '}
+                <span className={`font-medium ${getStatusColor(patient.status)}`}>
                   {getStatusLabel(patient.status)}
                 </span>
               </p>
@@ -345,6 +334,7 @@ const StatusActivationModal: React.FC<StatusChangeModalProps> = ({ isOpen, onClo
           </div>
         </div>
 
+        {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -359,18 +349,20 @@ const StatusActivationModal: React.FC<StatusChangeModalProps> = ({ isOpen, onClo
               required
             />
           </div>
-          <div className="flex justify-end gap-3">
+
+          {/* Acciones */}
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
             </button>
@@ -534,33 +526,33 @@ const ProfessionalPatients = () => {
   return (
     <div className="p-6">
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col mb-[15px] md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+          {/* Izquierda: Volver + títulos */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
             <button
               onClick={() => navigate('/professional')}
-              className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors w-full md:w-auto justify-center md:justify-start"
             >
               <ArrowLeftIcon className="h-5 w-5 mr-1" />
               Volver
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Mis Pacientes
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Gestiona tus pacientes asignados
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">Mis Pacientes</h1>
+              <p className="mt-1 text-sm text-gray-500">Gestiona tus pacientes asignados</p>
             </div>
           </div>
           <button
             onClick={handleRefresh}
-            className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${
+              isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+            } w-full md:w-auto justify-center`}
             disabled={isRefreshing}
           >
             <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Actualizar datos
           </button>
         </div>
+
 
         {/* Barra de búsqueda y filtros */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -612,8 +604,134 @@ const ProfessionalPatients = () => {
         </div>
 
         {/* Tabla de pacientes */}
-        <div className="mt-8 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+        {/* ===== MOBILE/TABLET: CARDS ===== */}
+        <div className="block md:hidden space-y-3 mt-8">
+          {filteredPatients.map((patient) => (
+            <div
+              key={patient.id}
+              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            >
+              {/* Header: Nombre + estado */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-gray-900 truncate">
+                    {patient.name}
+                  </h3>
+                  {patient.email && (
+                    <p className="text-sm text-gray-500 truncate">{patient.email}</p>
+                  )}
+                </div>
+
+                <span
+                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                    patient.status
+                  )}`}
+                >
+                  {getStatusLabel(patient.status)}
+                </span>
+              </div>
+
+              {/* Fecha de asignación + frecuencia */}
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded bg-gray-50 p-2">
+                  <div className="text-gray-500">Fecha de Asignación</div>
+                  <div className="font-medium text-gray-900">
+                    {patient.assignedAt
+                      ? new Date(patient.assignedAt).toLocaleDateString()
+                      : '-'}
+                  </div>
+                </div>
+                <div className="rounded bg-gray-50 p-2">
+                  <div className="text-gray-500">Frecuencia</div>
+                  <div>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        patient.sessionFrequency
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {getFrequencyLabel(patient.sessionFrequency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notas (audio o texto) */}
+              <div className="mt-3">
+                <div className="text-sm text-gray-500 mb-1">Notas</div>
+                {patient.audioNote ? (
+                  <div className="flex items-center">
+                    <audio
+                      controls
+                      className="w-full h-10"
+                      controlsList="nodownload"
+                      preload="metadata"
+                    >
+                      <source src={patient.audioNote} type="audio/webm" />
+                      <source src={patient.audioNote} type="audio/ogg" />
+                      <source src={patient.audioNote} type="audio/mpeg" />
+                      Tu navegador no soporta el elemento de audio.
+                    </audio>
+                  </div>
+                ) : patient.textNote ? (
+                  <p className="text-sm text-gray-700 line-clamp-3 break-words">
+                    {patient.textNote}
+                  </p>
+                ) : (
+                  <span className="text-gray-400 text-sm">Sin notas</span>
+                )}
+              </div>
+
+              {/* Acciones */}
+              <div className="mt-3 flex flex-wrap justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedPatientForDescription(patient);
+                    setShowDescriptionModal(true);
+                  }}
+                  className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                  title="Ver descripción"
+                >
+                  <EyeIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => handleViewMedicalHistory(patient)}
+                  className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                  title="Ver historial médico"
+                >
+                  <ClipboardDocumentListIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => openFrequencyModal(patient)}
+                  className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                  title="Cambiar frecuencia"
+                >
+                  <ClockIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => openStatusModal(patient)}
+                  className="text-red-600 hover:text-red-900 inline-flex items-center"
+                  title="Solicitar baja"
+                >
+                  <UserMinusIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => openRequestActivationModal(patient)}
+                  className="text-green-600 hover:text-green-900 inline-flex items-center"
+                  title="Solicitar alta"
+                >
+                  <UserPlusIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ===== DESKTOP: TABLA ORIGINAL ===== */}
+        <div className="hidden md:block">
+          <div className="mt-8 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -737,14 +855,20 @@ const ProfessionalPatients = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
+        {/* ===== EMPTY STATE (para ambos tamaños) ===== */}
         {filteredPatients.length === 0 && (
           <div className="text-center py-12">
             <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No se encontraron pacientes</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No se encontraron pacientes
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Intenta con otros términos de búsqueda' : 'Aún no tienes pacientes asignados'}
+              {searchTerm
+                ? 'Intenta con otros términos de búsqueda'
+                : 'Aún no tienes pacientes asignados'}
             </p>
           </div>
         )}

@@ -10,14 +10,16 @@ import {
   CalendarIcon,
   ArrowPathIcon,
   ArrowRightOnRectangleIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../Modal';
 import RecentActivityProfessional from '../professional/RecentActivityProfessional';
 import {Patient} from "../../types/Patient.ts";
-import userService, {User} from '../../services/user.service.ts';
+import userService, {User, UpdateUserData} from '../../services/user.service.ts';
+import ChangePasswordModal from '../professional/ChangePassword.tsx';
 
 const PsychologistDashboard = () => {
   const { user, logout } = useAuth();
@@ -26,6 +28,7 @@ const PsychologistDashboard = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [showPatientsModal, setShowPatientsModal] = useState(false);
   const navigate = useNavigate();
 
@@ -60,6 +63,19 @@ const PsychologistDashboard = () => {
     setIsRefreshing(false);
     toast.success('Datos actualizados');
   };
+
+  const changePassword = async (newPassword: string) =>{
+    try{
+      const updateData: UpdateUserData = {};
+      updateData.password = newPassword;
+      if(userLoaded){
+        await userService.updateUser(userLoaded.id, updateData);
+      }
+    } catch (e) {
+      console.error('Error al cargar datos:', e);
+      toast.error('Error al cargar los datos');
+    }
+  }
 
   const handleLogout = () => {
     logout();
@@ -96,16 +112,23 @@ const PsychologistDashboard = () => {
     <div className="p-6 space-y-8">
       {/* Header con Stats */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Bienvenido, {user?.name}
             </h1>
-            <p className="text-gray-600 mt-1">
-              Panel de control
-            </p>
+            <p className="text-gray-600 mt-1">Panel de control</p>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-4 flex-wrap md:justify-end">
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+              Cambiar contraseña
+            </button>
+
             <button
               onClick={handleRefresh}
               className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -114,6 +137,7 @@ const PsychologistDashboard = () => {
               <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
               Actualizar datos
             </button>
+
             <button
               onClick={handleLogout}
               className="flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
@@ -123,6 +147,7 @@ const PsychologistDashboard = () => {
             </button>
           </div>
         </div>
+
 
         {/* Recuadros de saldo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -282,6 +307,12 @@ const PsychologistDashboard = () => {
           )}
         </div>
       </Modal>
+
+      <ChangePasswordModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={changePassword}
+      />;
     </div>
   );
 };

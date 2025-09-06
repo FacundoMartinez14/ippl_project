@@ -46,7 +46,8 @@ module.exports = (sequelize, DataTypes) => {
       },
       commission: {
         type: DataTypes.DECIMAL(5, 2),
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0,
       },
       saldoTotal: {
         type: DataTypes.DECIMAL(12, 2),
