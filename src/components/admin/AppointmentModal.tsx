@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
-import api from '../../services/api';
+import api from '../../config/api';
 import Modal from '../Modal';
 import AudioRecorder from '../AudioRecorder';
 import { Professional } from '../../types/Professional';

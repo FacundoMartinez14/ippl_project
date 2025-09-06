@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../config/api';
 import { Patient } from '../types/Patient';
 import { API_URL } from '../config/config';
 import frequencyRequestService, { CreateFrequencyRequestDTO } from './frequencyRequest.service';
