@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast';
-import { User, Edit2, Trash2, Search, UserPlus, X } from 'lucide-react';
+import { User, Edit2, Trash2, Search, UserPlus, X, ArrowBigUpDash } from 'lucide-react';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import Button from '../common/Button';
 import userService, { User as UserType, CreateUserData, UpdateUserData } from '../../services/user.service';
 import EditUserModal from './EditUserModal';
@@ -12,10 +14,13 @@ const UserManagement: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isActiveModalOpen, setIsActiveModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
+  const [userToActive, setUserToActive] = useState<UserType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadUsers();
@@ -58,12 +63,33 @@ const UserManagement: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  const handleActiveClick = (user: UserType) => {
+    setUserToActive(user);
+    setIsActiveModalOpen(true);
+  }
+
+  const handleActiveConfirm = async () =>{
+    if (!userToActive) return;
+    
+    try {
+      let updateData: UpdateUserData = {};
+      updateData.status = "active";
+      await userService.updateUser(userToActive.id, updateData);
+      toast.success('Usuario activado exitosamente');
+      loadUsers();
+      setIsActiveModalOpen(false);
+      setUserToActive(null);
+    } catch (error) {
+      toast.error('Error al activar usuario'+"\n"+error);
+    }
+  }
+
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
     
     try {
       await userService.deleteUser(userToDelete.id);
-      toast.success('Usuario eliminado exitosamente');
+      toast.success('Usuario desactivado exitosamente');
       loadUsers();
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
@@ -106,7 +132,14 @@ const UserManagement: React.FC = () => {
 
   return (
     <div className="mt-24">
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-between mb-6">
+        <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              Volver al Dashboard
+        </button>
         <Button 
           variant="primary"
           className="inline-flex items-center"
@@ -141,8 +174,9 @@ const UserManagement: React.FC = () => {
             >
               <option value="all">Todos los roles</option>
               <option value="admin">Administradores</option>
-            <option value="content_manager">Editores de contenido</option>
-            <option value="professional">Psicólogos</option>
+              <option value="content_manager">Editores de contenido</option>
+              <option value="professional">Psicólogos</option>
+              <option value="financial">Financiero</option>
             </select>
           </div>
           
@@ -158,8 +192,90 @@ const UserManagement: React.FC = () => {
             </select>
           </div>
         </div>
+        <div className="block md:hidden bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-4 space-y-3">
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <div key={user.id} className="border border-gray-200 rounded-lg p-4">
+                  {/* Usuario + Rol + Estado */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <User size={18} className="text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">
+                          {user.name}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">{user.email}</div>
+                      </div>
+                    </div>
+
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary/10 text-primary shrink-0">
+                      {getRoleLabel(user.role)}
+                    </span>
+                  </div>
+
+                  {/* Estado + Fecha */}
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded bg-gray-50 p-2">
+                      <div className="text-gray-500">Estado</div>
+                      <div>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.status === 'active'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-gray-300 text-gray-800'
+                          }`}
+                        >
+                          {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="rounded bg-gray-50 p-2">
+                      <div className="text-gray-500">Registro</div>
+                      <div className="font-medium text-gray-900">{formatDate(user.createdAt)}</div>
+                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="mt-3 flex justify-end gap-3">
+                    <button
+                      className="text-indigo-600 hover:text-indigo-900"
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setIsEditModalOpen(true);
+                      }}
+                      title="Editar"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    {user.status == 'active' ?
+                    <button
+                      className="text-red-600 hover:text-red-900 transition-colors duration-200"
+                      onClick={() => handleDeleteClick(user)}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={18} />
+                    </button> : <button
+                      className="text-green-600 hover:text-green-900 transition-colors duration-200"
+                      onClick={() => handleActiveClick(user)}
+                      title="Eliminar"
+                    >
+                      <ArrowBigUpDash size={18} />
+                    </button>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-sm text-gray-500 py-6">
+                No se encontraron usuarios con los criterios de búsqueda.
+              </div>
+            )}
+          </div>
+        </div>
       
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -220,12 +336,20 @@ const UserManagement: React.FC = () => {
                     >
                         <Edit2 size={18} />
                       </button>
-                    <button 
+                    {user.status == 'active' ?
+                    <button
                       className="text-red-600 hover:text-red-900 transition-colors duration-200"
                       onClick={() => handleDeleteClick(user)}
+                      title="Eliminar"
                     >
-                        <Trash2 size={18} />
-                      </button>
+                      <Trash2 size={18} />
+                    </button> : <button
+                      className="text-green-600 hover:text-green-900 transition-colors duration-200"
+                      onClick={() => handleActiveClick(user)}
+                      title="Eliminar"
+                    >
+                      <ArrowBigUpDash size={18} />
+                    </button>}
                     </td>
                   </tr>
                 ))
@@ -263,7 +387,7 @@ const UserManagement: React.FC = () => {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">
-                Confirmar eliminación
+                Confirmar desactivacion
               </h3>
               <button
                 onClick={() => {
@@ -278,15 +402,12 @@ const UserManagement: React.FC = () => {
             
             <div className="mt-3">
               <p className="text-sm text-gray-500">
-                ¿Estás seguro de que deseas eliminar permanentemente al usuario?
+                ¿Estás seguro de que deseas desactivar usuario?
               </p>
               <div className="mt-2">
                 <p className="text-sm font-medium text-gray-900">{userToDelete.name}</p>
                 <p className="text-sm text-gray-500">{userToDelete.email}</p>
               </div>
-              <p className="mt-2 text-sm text-red-600">
-                Esta acción no se puede deshacer y el usuario será eliminado permanentemente.
-              </p>
             </div>
 
             <div className="mt-6 flex justify-end space-x-3">
@@ -305,8 +426,59 @@ const UserManagement: React.FC = () => {
                 onClick={handleDeleteConfirm}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
-                Eliminar permanentemente
+                Desactivar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isActiveModalOpen && userToActive && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Confirmar activacion
+              </h3>
+              <button
+                onClick={() => {
+                  setIsActiveModalOpen(false);
+                  setUserToActive(null);
+                }}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="mt-3">
+              <p className="text-sm text-gray-500">
+                ¿Estás seguro de que deseas activar nuevamente al usuario?
+              </p>
+              <div className="mt-2">
+                <p className="text-sm font-medium text-gray-900">{userToActive.name}</p>
+                <p className="text-sm text-gray-500">{userToActive.email}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsActiveModalOpen(false);
+                  setUserToActive(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Cancelar
+              </button>
+              <Button
+                type="button"
+                onClick={handleActiveConfirm}
+                className="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 "
+              >
+                Activar nuevamente
+              </Button>
             </div>
           </div>
         </div>
