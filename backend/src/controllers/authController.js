@@ -86,12 +86,6 @@ const refreshToken = async (req, res) => {
 
 const verifyToken = (req, res, next) => {
 	const token = req.header('Authorization')?.replace('Bearer ', '');
-	console.log(
-		'[verifyToken] path:',
-		req.originalUrl,
-		'auth:',
-		req.headers.authorization
-	);
 	if (!token) {
 		return res.status(401).json({ message: 'Acceso denegado' });
 	}
