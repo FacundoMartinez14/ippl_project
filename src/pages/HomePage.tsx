@@ -151,11 +151,6 @@ const HomePage = () => {
                     Solicitar consulta
                   </Button>
                 </Link>
-                <Link to="/profesionales" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    Conocer profesionales
-                  </Button>
-                </Link>
               </div>
             </div>
             <div className="flex flex-col items-center gap-6 w-full" data-aos="fade-left">

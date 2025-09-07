@@ -4,7 +4,7 @@ const { Message } = require('../../models');
 
 function requireMessageManager(req, res, next) {
   const role = req.user?.role;
-  if (role === 'admin' || role === 'content_manager') return next();
+  if (role === 'admin' || role === 'content_manager' || role === 'financial') return next();
   return res.status(403).json({ message: 'Acceso denegado' });
 }
 

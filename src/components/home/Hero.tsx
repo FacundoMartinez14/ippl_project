@@ -29,12 +29,6 @@ const Hero: React.FC = () => {
                 Solicitar consulta
               </Button>
             </Link>
-            
-            <Link to="/profesionales" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto bg-white/90 border-white text-blue-700 hover:bg-white">
-                Conocer a nuestros profesionales
-              </Button>
-            </Link>
           </div>
         </div>
       </div>

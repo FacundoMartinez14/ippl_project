@@ -20,12 +20,6 @@ const ContactCTA = () => {
           >
             Agenda tu consulta
           </Link>
-          <Link
-            to="/profesionales"
-            className="inline-block px-8 py-3 text-lg font-semibold rounded-full text-white border-2 border-white hover:bg-white hover:text-[#00777e] transition-colors"
-          >
-            Conocer Profesionales
-          </Link>
         </div>
       </div>
     </section>

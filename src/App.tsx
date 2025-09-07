@@ -123,6 +123,7 @@ function App() {
             <Route path="pagos" element={<FinancialPagosPage />} />
             <Route path="reportes" element={<ReportsPage />} />
             <Route path="solicitudes" element={<FinancialSolicitudesPage />} />
+            <Route path="messages" element={<AdminMessages />} />
             <Route path="facturas" element={<div className="p-6">Página de Facturas (En desarrollo)</div>} />
           </Route>
 
