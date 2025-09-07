@@ -45,7 +45,6 @@ const FinancialDashboard: React.FC = () => {
 	);
 	const [totalSaldoProfesionales, setTotalSaldoProfesionales] = useState(0);
 	const [totalDeudaComision, setTotalDeudaComision] = useState(0);
-	const [totalAbonosInstituto, setTotalAbonosInstituto] = useState(0);
 	const [recentAbonos, setRecentAbonos] = useState<
 		{ name: string; amount: number; date: string }[]
 	>([]);
@@ -54,7 +53,6 @@ const FinancialDashboard: React.FC = () => {
 		loadFinancialStats();
 		loadProfessionals();
 		loadRecentAbonos();
-		loadAbonosInstituto();
 	}, []); // Eliminar dependencia de dateRange
 
 	const loadFinancialStats = async () => {
@@ -169,16 +167,6 @@ const FinancialDashboard: React.FC = () => {
 			setRecentAbonos(recientes);
 		} catch (error) {
 			setRecentAbonos([]);
-		}
-	};
-
-	const loadAbonosInstituto = async () => {
-		try {
-			const abonos = await userService.getAbonos();
-			const total = abonos.reduce((acc, abono) => acc + (abono.amount || 0), 0);
-			setTotalAbonosInstituto(total);
-		} catch (error) {
-			setTotalAbonosInstituto(0);
 		}
 	};
 
@@ -366,23 +354,6 @@ const FinancialDashboard: React.FC = () => {
 											{stats?.completedAppointments || 0}
 										</h3>
 										<p className="text-sm text-gray-600">Citas Completadas</p>
-									</div>
-								</div>
-							</div>
-
-							<div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6">
-								<div className="flex items-center">
-									<div className="bg-purple-500/10 p-3 rounded-lg">
-										<ArrowTrendingUpIcon className="h-6 w-6 text-purple-600" />
-									</div>
-									<div className="ml-4">
-										<h3 className="text-2xl font-bold text-gray-900">
-											$
-											{totalAbonosInstituto.toLocaleString('es-CO', {
-												minimumFractionDigits: 2,
-											})}
-										</h3>
-										<p className="text-sm text-gray-600">Saldo del Instituto</p>
 									</div>
 								</div>
 							</div>

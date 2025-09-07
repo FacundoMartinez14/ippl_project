@@ -7,9 +7,9 @@ import {
 	DocumentTextIcon,
 	ArrowLeftOnRectangleIcon,
 	HomeIcon,
-	InboxIcon, // <-- nuevo ícono para Solicitudes
+	InboxIcon,
+	EnvelopeIcon,
 } from '@heroicons/react/24/outline';
-import ReportsPage from './admin/ReportsPage';
 
 const FinancialLayout: React.FC = () => {
 	const { logout } = useAuth();
@@ -36,6 +36,11 @@ const FinancialLayout: React.FC = () => {
 			name: 'Solicitudes',
 			icon: InboxIcon,
 			path: '/financial/solicitudes',
+		},
+		{
+			name: 'Mensajes',
+			icon: EnvelopeIcon,
+			path: '/financial/messages',
 		},
 	];
 
