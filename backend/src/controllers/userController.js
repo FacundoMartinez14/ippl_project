@@ -165,25 +165,39 @@ const abonarComision = async (req, res) => {
     }
 
     const prevSaldo = toAmount(professional.saldoPendiente);
-    const nextSaldo = +(prevSaldo - amount).toFixed(2);
+    const rawNext = prevSaldo - amount;
 
+    // clamp a 0
+    const nextSaldo = rawNext <= 0 ? 0 : +rawNext.toFixed(2);
+    const paidInFull = nextSaldo === 0 && prevSaldo > 0;
+
+    // Actualiza saldoPendiente y, si corresponde, saldoTotal
     await professional.update(
-      { saldoPendiente: nextSaldo, updatedAt: new Date() },
+      {
+        saldoPendiente: nextSaldo,
+        saldoTotal: paidInFull ? 0 : professional.saldoTotal,
+        updatedAt: new Date(),
+      },
       { transaction: t }
     );
 
+    // Registrar el abono
     await Abono.create(
       {
         professionalId: professional.id,
         professionalName: professional.name, // snapshot
-        amount: amount,
+        amount: +amount.toFixed(2),
         date: new Date(),
       },
       { transaction: t }
     );
 
     await t.commit();
-    return res.json({ success: true, saldoPendiente: nextSaldo });
+    return res.json({
+      success: true,
+      saldoPendiente: nextSaldo,
+      paidInFull, // booleano para que el cliente muestre alerta
+    });
   } catch (error) {
     await t.rollback();
     console.error('Error al abonar comisión:', error);
