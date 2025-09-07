@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PlusIcon, TrashIcon, MicrophoneIcon, EyeIcon, ClockIcon, DocumentTextIcon, UserPlusIcon, BellIcon, MagnifyingGlassIcon, ArrowUpCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, MicrophoneIcon, EyeIcon, ClockIcon, DocumentTextIcon, UserPlusIcon, BellIcon, MagnifyingGlassIcon, ArrowUpCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import patientsService, { AssignPatientDTO, CreatePatientDTO } from '../../services/patients.service';
 import { Patient } from '../../types/Patient';
 import userService from '../../services/user.service';
@@ -932,6 +932,13 @@ const PatientManagement = () => {
     <div className="min-h-screen bg-gray-100 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="md:flex md:items-center md:justify-between mb-6">
+          <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              Volver al Dashboard
+            </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
               Gestión de Pacientes
@@ -1039,7 +1046,110 @@ const PatientManagement = () => {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
+        <div className="block md:hidden bg-white rounded-lg shadow px-4 py-4">
+          <div className="space-y-3">
+            {filteredPatients.map((patient) => {
+              const statusClass =
+                patient.status === 'active'   ? 'bg-green-100 text-green-800' :
+                patient.status === 'pending'  ? 'bg-yellow-100 text-yellow-800' :
+                patient.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                patient.status === 'alta'     ? 'bg-green-200 text-green-900' :
+                                                'bg-red-100 text-red-800';
+
+              const statusLabel =
+                patient.status === 'active'   ? 'Activo' :
+                patient.status === 'pending'  ? 'Pendiente' :
+                patient.status === 'inactive' ? 'Inactivo' :
+                patient.status === 'alta'     ? 'Alta' :
+                                                'Ausente';
+
+              return (
+                <div key={patient.id} className="rounded-lg border border-gray-200 p-4">
+                  {/* Nombre + Estado */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold text-gray-900 truncate">
+                        {patient.name}
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        Profesional: <span className="font-medium">
+                          {patient.professionalName || 'No asignado'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+
+                  {/* Frecuencia */}
+                  <div className="mt-3">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      patient.sessionFrequency ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {getFrequencyLabel(patient.sessionFrequency)}
+                    </span>
+                  </div>
+
+                  {/* Acciones (mismas que la tabla) */}
+                  <div className="mt-3 flex flex-wrap justify-end gap-3">
+                    <button
+                      onClick={() => handleViewMedicalHistory(patient)}
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Ver Historial Médico"
+                    >
+                      <DocumentTextIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => openViewDescriptionModal(patient)}
+                      className="text-gray-600 hover:text-gray-900"
+                      title="Ver Descripción"
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => openAssignModal(patient)}
+                      className="text-green-600 hover:text-green-900"
+                      title="Asignar Profesional"
+                    >
+                      <UserPlusIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleViewStatusRequest(patient)}
+                      className="text-yellow-600 hover:text-yellow-900"
+                      title="Ver Solicitud"
+                    >
+                      <BellIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleViewFrequencyRequest(patient)}
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Ver Solicitud de Frecuencia"
+                    >
+                      <ClockIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleViewActivationRequest(patient)}
+                      className="text-green-600 hover:text-green-900"
+                      title="Ver Solicitud de Alta"
+                    >
+                      <ArrowUpCircleIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => { setPatientToDelete(patient.id); setIsDeleteModalOpen(true); }}
+                      className="text-red-600 hover:text-red-900"
+                      title="Eliminar"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="hidden md:block bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <div className="flex flex-col">
             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
               <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">

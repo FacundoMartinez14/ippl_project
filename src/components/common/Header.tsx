@@ -146,45 +146,48 @@ const Header = () => {
 
         {/* Mobile menu */}
         <div 
-          className={`md:hidden transform transition-all duration-200 ease-in-out ${
-            isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden
+          ${isMenuOpen
+            ? 'opacity-100 translate-y-0 max-h-[80vh]'
+            : 'opacity-0 -translate-y-2 max-h-0 pointer-events-none'
           }`}
         >
-          <div className="pt-2 pb-3 space-y-1">
+        <div className="pt-2 pb-3 space-y-1">
             {navigationLinks.map((link, index) =>
               link.dropdown ? (
                 <div key={`mobile-nav-${index}`} className="relative">
                   <button
                     className="w-full flex items-center justify-between px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                     onClick={() => setIsBlogOpen((prev) => !prev)}
+                    aria-expanded={isBlogOpen}
                   >
                     {link.text}
                     <ChevronDown className="w-4 h-4 ml-2" />
                   </button>
-                  {isBlogOpen && (
-                    <div className="pl-4 mt-1 space-y-1">
-                      {link.dropdown.map((item) => (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          {item.text}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+                  {/* submenú */}
+                  <div className={`pl-4 mt-1 space-y-1 transition-all duration-200 overflow-hidden
+                    ${isBlogOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    {link.dropdown.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.text}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               ) : (
-              <Link
-                key={`mobile-nav-${index}`}
-                to={link.to}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.text}
-              </Link>
+                <Link
+                  key={`mobile-nav-${index}`}
+                  to={link.to}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.text}
+                </Link>
               )
             )}
           </div>
