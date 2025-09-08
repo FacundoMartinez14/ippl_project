@@ -21,12 +21,7 @@ const app = express();
 app.use(express.static(path.join(__dirname, '../../public')));
 
 // Configuración de CORS
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Range']
-}));
+app.use(cors());
 
 app.use(express.json());
 
@@ -45,13 +40,7 @@ const postsUploadsDir = path.join(uploadsDir, 'posts');
 // Configurar middleware para servir archivos estáticos
 app.use('/uploads', (req, res, next) => {
   // Configurar CORS para archivos estáticos
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Range');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.header('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.header('Cross-Origin-Opener-Policy', 'same-origin');
-
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5000');
   // Manejar diferentes tipos de archivos de audio
   if (req.path.match(/\.(webm|ogg|mp3|wav)$/)) {
     const extension = path.extname(req.path).toLowerCase();

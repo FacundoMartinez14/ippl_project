@@ -114,6 +114,17 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 // Servir archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+const FRONTEND_DIST = path.resolve(__dirname, '../../dist');
+app.use(express.static(FRONTEND_DIST, {
+  index: false // importante: el index lo servimos en el fallback
+}));
+
+// Fallback SPA: cualquier ruta NO-API devuelve index.html
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(FRONTEND_DIST, 'index.html'));
+});
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
 	console.error('Error:', err);

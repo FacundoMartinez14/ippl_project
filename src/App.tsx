@@ -81,7 +81,6 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/nosotros" element={<AboutPage />} />
-            <Route path="/profesionales" element={<ProfessionalsPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/ninos" element={<BlogNinosPage />} />
