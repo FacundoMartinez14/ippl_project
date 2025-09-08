@@ -15,15 +15,6 @@ module.exports = {
 				updatedAt: new Date(),
 			},
 			{
-				name: 'Facundo Martinez',
-				email: 'facundo.eet2@gmail.com',
-				password: supporthash,
-				role: 'admin',
-				status: 'active',
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			},
-			{
 				name: 'Antonella Gonzalez',
 				email: 'antuggonzalez13@gmail.com',
 				password: supporthash,
