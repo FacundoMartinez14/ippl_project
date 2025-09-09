@@ -1,7 +1,8 @@
 import api from '../config/api';
 import { Patient } from '../types/Patient';
-import { API_URL } from '../config/config';
 import frequencyRequestService, { CreateFrequencyRequestDTO } from './frequencyRequest.service';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 
 export interface CreatePatientDTO {

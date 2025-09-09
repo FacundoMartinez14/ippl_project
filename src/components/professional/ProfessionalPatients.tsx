@@ -17,7 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import Modal from '../Modal';
 import MedicalHistoryList from '../admin/MedicalHistoryList';
 import axios from 'axios';
-import { API_URL } from '../../config/config';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 interface StatusChangeModalProps {
   isOpen: boolean;

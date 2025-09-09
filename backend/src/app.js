@@ -39,8 +39,6 @@ const postsUploadsDir = path.join(uploadsDir, 'posts');
 
 // Configurar middleware para servir archivos estáticos
 app.use('/uploads', (req, res, next) => {
-  // Configurar CORS para archivos estáticos
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5000');
   // Manejar diferentes tipos de archivos de audio
   if (req.path.match(/\.(webm|ogg|mp3|wav)$/)) {
     const extension = path.extname(req.path).toLowerCase();

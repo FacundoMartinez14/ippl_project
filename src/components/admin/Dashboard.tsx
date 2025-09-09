@@ -55,8 +55,6 @@ interface ActivityItemProps {
   time: string;
 }
 
-const API_URL = 'http://localhost:5000/api';
-
 const MAX_MESSAGES = 2; // Número máximo de mensajes a mostrar
 const MAX_ACTIVITIES = 3; // Número máximo de actividades a mostrar
 
