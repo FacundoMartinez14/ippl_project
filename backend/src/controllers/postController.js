@@ -319,14 +319,12 @@ const checkPostViewed = async (req, res) => {
 const incrementPostView = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = String(req.user.id);
 
     const result = await sequelize.transaction(async (t) => {
-      // lock de fila para evitar condiciones de carrera al actualizar views/viewedBy
       const post = await Post.findByPk(id, {
-        attributes: ['id', 'active', 'views', 'viewedBy'],
+        attributes: ['id', 'active', 'views'],
         transaction: t,
-        lock: t.LOCK.UPDATE,
+        lock: t.LOCK.UPDATE, // evita condiciones de carrera
       });
 
       if (!post || post.active === false) {
@@ -335,21 +333,10 @@ const incrementPostView = async (req, res) => {
         throw err;
       }
 
-      const viewedBy = Array.isArray(post.viewedBy)
-        ? post.viewedBy.map(String)
-        : [];
+      post.views = (post.views || 0) + 1;
+      await post.save({ transaction: t });
 
-      let isViewed = viewedBy.includes(userId);
-
-      if (!isViewed) {
-        viewedBy.push(userId);
-        post.viewedBy = viewedBy;
-        post.views = (post.views || 0) + 1;
-        await post.save({ transaction: t });
-        isViewed = true;
-      }
-
-      return { views: post.views, isViewed };
+      return { views: post.views };
     });
 
     return res.json(result);
@@ -365,11 +352,10 @@ const incrementPostView = async (req, res) => {
 const togglePostLike = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = String(req.user.id);
 
     const result = await sequelize.transaction(async (t) => {
       const post = await Post.findByPk(id, {
-        attributes: ['id', 'active', 'likes', 'likedBy'],
+        attributes: ['id', 'active', 'likes'],
         transaction: t,
         lock: t.LOCK.UPDATE,
       });
@@ -380,29 +366,10 @@ const togglePostLike = async (req, res) => {
         throw err;
       }
 
-      const likedBy = Array.isArray(post.likedBy)
-        ? post.likedBy.map(String)
-        : [];
-
-      const idx = likedBy.indexOf(userId);
-      let isLiked;
-
-      if (idx === -1) {
-        // no estaba likeado → agregar
-        likedBy.push(userId);
-        post.likedBy = likedBy;
-        post.likes = (post.likes || 0) + 1;
-        isLiked = true;
-      } else {
-        // ya estaba likeado → quitar
-        likedBy.splice(idx, 1);
-        post.likedBy = likedBy;
-        post.likes = Math.max((post.likes || 1) - 1, 0);
-        isLiked = false;
-      }
-
+      post.likes = (post.likes || 0) + 1;
       await post.save({ transaction: t });
-      return { likes: post.likes, isLiked };
+
+      return { likes: post.likes };
     });
 
     return res.json(result);
@@ -410,10 +377,11 @@ const togglePostLike = async (req, res) => {
     if (error.status === 404) {
       return res.status(404).json({ message: error.message });
     }
-    console.error('Error al gestionar like:', error);
-    return res.status(500).json({ message: 'Error al gestionar el like' });
+    console.error('Error al incrementar like:', error);
+    return res.status(500).json({ message: 'Error al incrementar el like' });
   }
 };
+
 
 const checkPostLike = async (req, res) => {
   try {

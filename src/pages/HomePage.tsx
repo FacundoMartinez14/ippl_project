@@ -33,7 +33,6 @@ const HomePage = () => {
     const fetchImages = async () => {
       try {
         const imageFiles = await contentManagementService.getCarouselImages();
-        console.log(imageFiles);
         setImages(imageFiles.map(file => `${API_URL}/images/carousel/${file}`));
       } catch (error) {
         console.error("Error al cargar las imágenes del carrusel:", error);

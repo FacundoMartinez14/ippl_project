@@ -44,6 +44,9 @@ const upload = multer({ storage: storage });
 router.get('/', postController.getAllPosts);
 router.get('/:section', postController.getPostBySection);
 router.get('/slug/:slug', postController.getPostBySlug);
+router.post('/:id/increment-view', postController.incrementPostView);
+// Toggle like de un post
+router.post('/:id/toggle-like', postController.togglePostLike);
 
 // Rutas protegidas
 router.use(verifyToken);
@@ -60,10 +63,7 @@ router.delete('/:id', postController.deletePost);
 router.get('/:id/check-view', verifyToken, postController.checkPostViewed);
 
 // Incrementar vistas de un post (solo si el usuario no lo ha visto antes)
-router.post('/:id/increment-view', verifyToken, postController.incrementPostView);
 
-// Toggle like de un post
-router.post('/:id/toggle-like', verifyToken, postController.togglePostLike);
 
 // Verificar si un usuario ha dado like a un post
 router.get('/:id/check-like', verifyToken, postController.checkPostLike);

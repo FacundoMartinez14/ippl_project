@@ -1,4 +1,4 @@
-import React, { useState, useEffect,  } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import postsService, { Post } from '../services/posts.service';
 import { CalendarIcon, EyeIcon, HeartIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
@@ -16,19 +16,24 @@ const BlogPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [likedPosts, setLikedPosts] = useState<{ [key: string]: boolean }>({});
-  const [viewedPosts, setViewedPosts] = useState<{ [key: string]: boolean }>({});
   const [isLiking, setIsLiking] = useState(false);
   const { section } = useParams<{ section?: string }>();
 
   useEffect(() => {
     AOS.init({ duration: 900, once: true });
-    loadPosts();
   }, []);
+
+  const loadPostsCb = useCallback(() => {
+    return loadPosts();
+  }, [section]);
+
+  useEffect(() => {
+    loadPostsCb();
+  }, [loadPostsCb]);
 
   useEffect(() => {
     if (user && posts.length > 0) {
       checkLikedPosts();
-      checkViewedPosts();
     }
   }, [user, posts]);
 
@@ -45,18 +50,6 @@ const BlogPage = () => {
     }
   };
 
-  const checkViewedPosts = async () => {
-    try {
-      const viewedStatus: { [key: string]: boolean } = {};
-      for (const post of posts) {
-        const isViewed = await postsService.checkIfViewed(post.id);
-        viewedStatus[post.id] = isViewed;
-      }
-      setViewedPosts(viewedStatus);
-    } catch (error) {
-      console.error('Error al verificar vistas:', error);
-    }
-  };
 
   const loadPosts = async () => {
     try {
@@ -101,17 +94,11 @@ const BlogPage = () => {
 
   const handlePostClick = async (post: Post) => {
     setSelectedPost(post);
-    if (!user || viewedPosts[post.id]) return;
-
     try {
       const { views } = await postsService.incrementViews(post.id);
       setPosts(posts.map(p => 
         p.id === post.id ? { ...p, views } : p
       ));
-      setViewedPosts(prev => ({
-        ...prev,
-        [post.id]: true
-      }));
     } catch (error) {
       console.error('Error al incrementar vistas:', error);
     }
@@ -119,31 +106,23 @@ const BlogPage = () => {
 
   const handleLike = async (postId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    if (!user) {
-      toast.error('Debes iniciar sesión para dar like');
-      return;
-    }
     if (isLiking) return;
 
     try {
       setIsLiking(true);
-      const { likes, isLiked } = await postsService.toggleLike(postId);
+      const { likes } = await postsService.toggleLike(postId);
       
       // Actualizar el contador de likes y el estado del like en la lista de posts
       setPosts(posts.map(post => 
         post.id === postId ? { ...post, likes } : post
       ));
-      setLikedPosts(prev => ({
-        ...prev,
-        [postId]: isLiked
-      }));
 
       // Actualizar el post seleccionado si está abierto
       if (selectedPost?.id === postId) {
         setSelectedPost(prev => prev ? { ...prev, likes } : null);
       }
 
-      toast.success(isLiked ? '¡Gracias por tu like!' : 'Like removido');
+      toast.success('¡Gracias por tu like!');
     } catch (error) {
       console.error('Error al gestionar like:', error);
       toast.error('Error al gestionar el like');
@@ -334,54 +313,50 @@ const BlogPage = () => {
               </article>
             ))}
           </div>
-
-          {/* (Opcional) CTA */}
-          {/* <div className="mt-14 text-center">
-            <button className="inline-flex items-center px-5 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition">
-              Explorar más contenido
-            </button>
-          </div> */}
         </main>
 
         {/* === Modal de Post (tu versión actual, sin cambios funcionales) === */}
-        {selectedPost && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative">
+          {selectedPost && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto relative shadow-2xl">
+              {/* Botón de cerrar */}
               <button
                 onClick={() => setSelectedPost(null)}
-                className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg text-gray-600 hover:text-red-600 hover:bg-red-50 transform hover:scale-110 transition-all duration-200 z-50"
+                className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg text-gray-600 hover:text-red-600 hover:bg-red-50 transform hover:scale-110 transition-all duration-200 z-50"
                 aria-label="Cerrar"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
 
-              <article className="p-6">
-                {selectedPost.thumbnail && (
-                  <div className="relative w-full h-[460px] mb-8">
-                    <img
-                      src={getImageUrl(selectedPost.thumbnail)}
-                      alt={selectedPost.title}
-                      className="w-full h-full object-cover rounded-xl shadow-lg"
-                    />
+              {/* Imagen hero ocupando altura */}
+              {selectedPost.thumbnail && (
+                <div className="relative w-full h-[70vh]">
+                  <img
+                    src={getImageUrl(selectedPost.thumbnail)}
+                    alt={selectedPost.title}
+                    className="w-full h-full object-cover rounded-t-2xl"
+                  />
+                  {/* overlay sutil para efecto magazine */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent rounded-t-2xl"></div>
+                  <div className="absolute bottom-6 left-6 text-white">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedPost.tags?.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-sm"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <h1 className="text-4xl font-extrabold drop-shadow-lg">{selectedPost.title}</h1>
                   </div>
-                )}
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedPost.tags?.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                    >
-                      {tag}
-                    </span>
-                  ))}
                 </div>
+              )}
 
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                  {selectedPost.title}
-                </h1>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-8">
+              {/* Contenido */}
+              <article className="p-8 prose prose-lg max-w-none">
+                <div className="flex items-center justify-between text-sm text-gray-500 mb-8 border-b pb-4">
                   <div className="flex items-center space-x-4">
                     <span className="flex items-center">
                       <CalendarIcon className="h-4 w-4 mr-1" />
@@ -408,14 +383,11 @@ const BlogPage = () => {
                     </button>
                   </div>
                   {selectedPost.readTime && (
-                    <span className="text-teal-700">{selectedPost.readTime}</span>
+                    <span className="text-teal-700 font-medium">{selectedPost.readTime}</span>
                   )}
                 </div>
 
-                <div
-                  className="prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-                />
+                <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
               </article>
             </div>
           </div>

@@ -47,18 +47,11 @@ vi.mock('../../../services/stats.service', () => ({
   }
 }));
 
-// Mock del contexto de autenticación
-const mockUser = {
-  id: '1',
-  name: 'Admin Test',
-  email: 'admin@test.com',
-  role: 'admin'
-};
 
 const renderDashboard = () => {
   return render(
     <BrowserRouter>
-      <AuthProvider initialUser={mockUser}>
+      <AuthProvider>
         <Dashboard />
       </AuthProvider>
     </BrowserRouter>

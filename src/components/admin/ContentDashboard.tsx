@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import postsService, { Post } from '../../services/posts.service';
 import { getImageUrl } from '../../utils/imageUtils';
+import ContentEditorModal from './ContentEditorModal.tsx';
 import { 
   PencilIcon, 
   TrashIcon, 
@@ -22,7 +23,6 @@ import contentManagementService from '../../services/content.service';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const ContentDashboard = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +36,10 @@ const ContentDashboard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
   const [isDeleteCarouselModalOpen, setIsDeleteCarouselModalOpen] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isPostModalToCreate, setIsPostModalToCreate] = useState(false);
+  const [postToEdit, setPostToEdit] = useState<Post>();
+  const [selectedPost, setSelectedPost] = useState<Post | undefined>(undefined);
 
   // Filtros disponibles
   const sectionOptions = [
@@ -105,13 +109,38 @@ const ContentDashboard = () => {
     }
   };
 
-    const handleOpenModal = (post?: Post) => {
-        let prefix = '/content';
-        if (user?.role === 'admin') prefix = '/admin';
-        if (post) {
-            navigate(`${prefix}/editar/${post.id}`);
-        } else {
-            navigate(`${prefix}/nuevo`);
+  const handleOpenModalToEdit = (post: Post) => {
+    setIsPostModalToCreate(false);
+    setPostToEdit(post);
+    setIsPostModalOpen(true);
+  };
+
+  const handleOpenModalToCreate = () => {
+    setIsPostModalToCreate(true);
+    setIsPostModalOpen(true);
+  }
+
+  const handleSave = async (postData: FormData, id?: string) => {
+        const toasterMessages = {
+            successCreate: 'Post creado correctamente',
+            successEdit: 'Post actualizado correctamente',
+            errorCreate: 'Error al crear el post',
+            errorEdit: 'Error al actualizar el post'
+        }
+        try {
+            if (id) {
+                const updatedPost = await postsService.updatePost(id, postData);
+                setPosts(posts.map(p => p.id === id ? updatedPost : p));
+                toast.success(toasterMessages.successEdit);
+            } else {
+                const newPost = await postsService.createPost(postData);
+                setPosts([newPost.post, ...posts]);
+                toast.success(toasterMessages.successCreate);
+            }
+            setSelectedPost(undefined);
+        } catch (error) {
+            toast.error(selectedPost ? toasterMessages.errorEdit : toasterMessages.errorCreate);
+            console.log("error", error, true);
         }
     };
 
@@ -134,13 +163,10 @@ const ContentDashboard = () => {
     
     setIsUploading(true);
     toast.loading('Subiendo imagen...');
-    const formData = new FormData();
-    // El backend espera 'carouselImages' como un array
-    formData.append("carouselImages", file);
-
     try {
+      let files = Array.from(fileInputRef.current?.files ?? []);
       // Usamos el servicio de posts que tiene la función de subida
-      // await postsService.uploadCarouselImages(formData); => No implementado
+      await contentManagementService.uploadCarouselImages(files);
       toast.dismiss();
       toast.success('Imagen subida exitosamente.');
       fetchCarouselImages(); // Refrescar la galería
@@ -220,7 +246,7 @@ const ContentDashboard = () => {
             </button>
             {user?.role === 'content_manager' && (
             <button
-              onClick={() => handleOpenModal()}
+              onClick={() => handleOpenModalToCreate()}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -229,7 +255,14 @@ const ContentDashboard = () => {
             )}
           </div>
         </div>
-
+          {isPostModalOpen && (
+            <ContentEditorModal
+              post={!isPostModalToCreate ? postToEdit : undefined}
+              user={user}
+              onSave={handleSave}
+              closeModal={() => setIsPostModalOpen(false)}
+            />
+          )}
         {/* Filtros y búsqueda */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="relative">
@@ -387,7 +420,7 @@ const ContentDashboard = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
                     <button
-                      onClick={() => handleOpenModal(post)}
+                      onClick={() => handleOpenModalToEdit(post)}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       <PencilIcon className="h-5 w-5" />
@@ -420,6 +453,7 @@ const ContentDashboard = () => {
                     type="file" 
                     id="carouselUpload"
                     ref={fileInputRef}
+                    multiple
                     accept="image/*"
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
                 />

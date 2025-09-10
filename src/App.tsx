@@ -16,11 +16,7 @@ import BlogPostPage from './pages/BlogPostPage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import ContactPage from './pages/ContactPage';
-import ProfessionalsPage from './pages/ProfessionalsPage';
 import ActivityPage from './pages/ActivityPage';
-import BlogNinosPage from './pages/BlogNinosPage';
-import BlogAdultosPage from './pages/BlogAdultosPage';
-import BlogNoticiasPage from './pages/BlogNoticiasPage';
 import MedicalHistoryPage from './pages/MedicalHistoryPage';
 
 // Admin pages
@@ -46,7 +42,6 @@ import TodayAppointmentsPage from './pages/professional/TodayAppointmentsPage';
 import AllActivitiesPage from './pages/professional/AllActivitiesPage';
 import CompletedAppointmentsPage from './pages/professional/CompletedAppointmentsPage';
 import NotFoundReports from './pages/404';
-import ContentManagement from "./components/admin/ContentManagement.tsx";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -83,9 +78,7 @@ function App() {
             <Route path="/nosotros" element={<AboutPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/ninos" element={<BlogNinosPage />} />
-            <Route path="/blog/adultos" element={<BlogAdultosPage />} />
-            <Route path="/blog/noticias" element={<BlogNoticiasPage />} />
+            <Route path="/blog/:section" element={<BlogPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/contacto" element={<ContactPage />} />
           </Route>
@@ -133,8 +126,6 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<ContentDashboard />} />
-            <Route path="nuevo" element={<ContentManagement/>}/>
-            <Route path="editar/:id" element={<ContentManagement/>}/>
           </Route>
 
           {/* Professional routes */}

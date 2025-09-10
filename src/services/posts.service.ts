@@ -45,7 +45,6 @@ export interface PostResponse {
 
 interface ToggleLikeResponse {
 	likes: number;
-	isLiked: boolean;
 }
 interface IncrementViewsResponse {
 	views: number;
