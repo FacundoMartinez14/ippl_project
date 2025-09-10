@@ -70,6 +70,7 @@ const PsychologistDashboard = () => {
       updateData.password = newPassword;
       if(userLoaded){
         await userService.updateUser(userLoaded.id, updateData);
+        toast.success('Contraseña cambiada correctamente');
       }
     } catch (e) {
       console.error('Error al cargar datos:', e);

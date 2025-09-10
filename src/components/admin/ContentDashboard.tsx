@@ -15,10 +15,14 @@ import {
   ArrowPathIcon,
   MagnifyingGlassIcon,
   BookmarkIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import contentManagementService from '../../services/content.service';
+import userService, { UpdateUserData, User } from '../../services/user.service.ts';
+import { parseNumber } from '../../utils/functionUtils.ts';
+import ChangePasswordModal from '../professional/ChangePassword.tsx';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -40,6 +44,8 @@ const ContentDashboard = () => {
   const [isPostModalToCreate, setIsPostModalToCreate] = useState(false);
   const [postToEdit, setPostToEdit] = useState<Post>();
   const [selectedPost, setSelectedPost] = useState<Post | undefined>(undefined);
+  const [showModal, setShowModal] = useState(false);
+  const [userLoaded, setUserLoaded] = useState<User>();
 
   // Filtros disponibles
   const sectionOptions = [
@@ -56,9 +62,20 @@ const ContentDashboard = () => {
   ];
 
   useEffect(() => {
+    if (user) {
+      loadUser();
+    }
+  }, [user]);
+
+  useEffect(() => {
     loadPosts();
     fetchCarouselImages();
   }, []);
+
+  const loadUser = async () => {
+    const userToLoad = await userService.getUserById(parseNumber(user?.id))
+    setUserLoaded(userToLoad);
+  }
 
   const loadPosts = async () => {
     try {
@@ -88,6 +105,20 @@ const ContentDashboard = () => {
     
     return { published, draft, totalViews, totalLikes };
   };
+
+  const changePassword = async (newPassword: string) =>{
+      try{
+        const updateData: UpdateUserData = {};
+        updateData.password = newPassword;
+        if(userLoaded){
+          await userService.updateUser(userLoaded.id, updateData);
+          toast.success('Contraseña cambiada correctamente');
+        }
+      } catch (e) {
+        console.error('Error al cargar datos:', e);
+        toast.error('Error al cargar los datos');
+      }
+    }
 
   const stats = getPostStats();
 
@@ -237,6 +268,13 @@ const ContentDashboard = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <button
+                          onClick={() => setShowModal(true)}
+                          className="flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                <AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+                Cambiar contraseña
+              </button>
             <button
               onClick={handleRefresh}
               className={`p-2 text-gray-500 hover:text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -596,6 +634,11 @@ const ContentDashboard = () => {
           </div>
         </div>
       )}
+      <ChangePasswordModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={changePassword}
+      />;
     </div>
   );
 };

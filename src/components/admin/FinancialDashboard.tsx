@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import userService, { User } from '../../services/user.service';
+import userService, { UpdateUserData, User } from '../../services/user.service';
 import {
 	CurrencyDollarIcon,
-	ArrowTrendingUpIcon,
+	AdjustmentsHorizontalIcon,
 	ExclamationCircleIcon,
 	ArrowPathIcon,
 	CalendarIcon,
@@ -13,6 +13,8 @@ import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import patientsService from '../../services/patients.service';
 import appointmentsService from '../../services/appointments.service';
+import { parseNumber } from '../../utils/functionUtils';
+import ChangePasswordModal from '../professional/ChangePassword';
 
 interface FinancialStats {
 	totalRevenue: number;
@@ -38,6 +40,7 @@ const FinancialDashboard: React.FC = () => {
 	const [stats, setStats] = useState<FinancialStats | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isRefreshing, setIsRefreshing] = useState(false);
+	const [userLoaded, setUserLoaded] = useState<User>();
 	// Eliminar: const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('month');
 	const [professionals, setProfessionals] = useState<User[]>([]);
 	const [selectedProfessional, setSelectedProfessional] = useState<User | null>(
@@ -45,15 +48,27 @@ const FinancialDashboard: React.FC = () => {
 	);
 	const [totalSaldoProfesionales, setTotalSaldoProfesionales] = useState(0);
 	const [totalDeudaComision, setTotalDeudaComision] = useState(0);
+ 	const [showModal, setShowModal] = useState(false);
 	const [recentAbonos, setRecentAbonos] = useState<
 		{ name: string; amount: number; date: string }[]
 	>([]);
+
+	useEffect(() => {
+		if (user) {
+		loadUser();
+		}
+	}, [user]);
 
 	useEffect(() => {
 		loadFinancialStats();
 		loadProfessionals();
 		loadRecentAbonos();
 	}, []); // Eliminar dependencia de dateRange
+
+	const loadUser = async () => {
+		const userToLoad = await userService.getUserById(parseNumber(user?.id))
+		setUserLoaded(userToLoad);
+  	}
 
 	const loadFinancialStats = async () => {
 		try {
@@ -151,6 +166,20 @@ const FinancialDashboard: React.FC = () => {
 			toast.error('Error al cargar profesionales');
 		}
 	};
+
+	const changePassword = async (newPassword: string) =>{
+    try{
+      const updateData: UpdateUserData = {};
+      updateData.password = newPassword;
+      if(userLoaded){
+        await userService.updateUser(userLoaded.id, updateData);
+        toast.success('Contraseña cambiada correctamente');
+      }
+    } catch (e) {
+      console.error('Error al cargar datos:', e);
+      toast.error('Error al cargar los datos');
+    }
+  }
 
 	const loadRecentAbonos = async () => {
 		try {
@@ -287,6 +316,13 @@ const FinancialDashboard: React.FC = () => {
 					</div>
 					<div className="flex items-center gap-4">
 						{/* Eliminar el select de rango de fechas */}
+						<button
+                          onClick={() => setShowModal(true)}
+                          className="flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+							>
+							<AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+							Cambiar contraseña
+						</button>
 						<button
 							onClick={handleRefresh}
 							className={`flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors ${
@@ -508,6 +544,11 @@ const FinancialDashboard: React.FC = () => {
 					</div>
 				</div>
 			)}
+			<ChangePasswordModal
+			isOpen={showModal}
+			onClose={() => setShowModal(false)}
+			onSubmit={changePassword}
+		/>;
 		</div>
 	);
 };
