@@ -33,6 +33,7 @@ const HomePage = () => {
     const fetchImages = async () => {
       try {
         const imageFiles = await contentManagementService.getCarouselImages();
+        console.log(imageFiles);
         setImages(imageFiles.map(file => `${API_URL}/images/carousel/${file}`));
       } catch (error) {
         console.error("Error al cargar las imágenes del carrusel:", error);
@@ -47,8 +48,13 @@ const HomePage = () => {
 
   const [isHovering, setIsHovering] = useState(false);
 
-  const prev = () => setCurrentIndex((c) => (c === 0 ? images.length - 1 : c - 1));
-  const next = useCallback(() => setCurrentIndex((c) => (c === images.length - 1 ? 0 : c + 1)), []);
+  const next = useCallback(() => {
+    setCurrentIndex(c => (c + 1) % images.length);
+  }, [images.length]);
+
+  const prev = useCallback(() => {
+    setCurrentIndex(c => (c - 1 + images.length) % images.length);
+  }, [images.length]);
 
   useEffect(() => {
     if (!isHovering) {

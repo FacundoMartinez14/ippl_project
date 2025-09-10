@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,  } from 'react';
 import postsService, { Post } from '../services/posts.service';
 import { CalendarIcon, EyeIcon, HeartIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
@@ -7,15 +7,18 @@ import { getImageUrl } from '../utils/imageUtils';
 import { useAuth } from '../context/AuthContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import { useParams } from 'react-router-dom';
 
 const BlogPage = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [featuredPost, setFeaturedPost] = useState<Post>();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [likedPosts, setLikedPosts] = useState<{ [key: string]: boolean }>({});
   const [viewedPosts, setViewedPosts] = useState<{ [key: string]: boolean }>({});
   const [isLiking, setIsLiking] = useState(false);
+  const { section } = useParams<{ section?: string }>();
 
   useEffect(() => {
     AOS.init({ duration: 900, once: true });
@@ -58,8 +61,36 @@ const BlogPage = () => {
   const loadPosts = async () => {
     try {
       setIsLoading(true);
-      const response = await postsService.getAllPosts();
-      setPosts(response.posts || []);
+      let response
+      if(section){
+        response = await postsService.getPostBySection(section);
+      } else{
+        response = await postsService.getAllPosts();
+      }
+
+      if(response.posts.length == 0) return;
+
+      let featuredPost;
+      let restOfPosts = response.posts;
+
+      // Chequear si hay al menos un featured
+      const featuredIndex = response.posts.findIndex((post) => post.featured);
+
+      if (featuredIndex !== -1) {
+        // Usar el primero con featured = true
+        featuredPost = response.posts[featuredIndex];
+         restOfPosts = [
+           ...response.posts.slice(0, featuredIndex),
+          ...response.posts.slice(featuredIndex + 1),
+         ];
+       } else {
+         // Si no hay featured, usar el primero del array
+          featuredPost = response.posts[0];
+          restOfPosts = response.posts.slice(1);
+       }
+      
+      setFeaturedPost(featuredPost);
+      setPosts(restOfPosts);
     } catch (error) {
       console.error('Error loading posts:', error);
       toast.error('Error al cargar los posts');
@@ -131,165 +162,265 @@ const BlogPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      {/* Header */}
-      <div className="text-center mb-16" data-aos="fade-up">
-        <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-          Blog IPPL
-        </h1>
-        <p className="mt-4 text-xl text-gray-500 max-w-3xl mx-auto">
-          Artículos, noticias y recursos sobre psicología y salud mental
-        </p>
-      </div>
-
-      {/* Posts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map((post, idx) => (
-          <article
-            key={post.id}
-            onClick={() => handlePostClick(post)}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
-            data-aos="zoom-in-up"
-            data-aos-delay={idx * 100}
-          >
-            {post.thumbnail && (
-              <img 
-                src={getImageUrl(post.thumbnail)} 
-                alt={post.title}
-                className="w-full h-48 object-cover"
-              />
-            )}
-            <div className="p-6">
-              <div className="flex flex-wrap gap-2 mb-4">
-                {post.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#E0F2F1] text-[#00796B]"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <h2 className="text-xl font-bold text-gray-900 mb-2 hover:text-[#00796B]">
-                {post.title}
-              </h2>
-
-              <p className="text-gray-600 mb-4">
-                {post.excerpt}
-              </p>
-
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-1" />
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </span>
-                  <span className="flex items-center">
-                    <EyeIcon className="h-4 w-4 mr-1" />
-                    {post.views || 0}
-                  </span>
-                  <button
-                    onClick={(e) => handleLike(post.id, e)}
-                    className={`flex items-center transition-colors ${
-                      likedPosts[post.id] 
-                        ? 'text-[#00796B] hover:text-[#006C73]' 
-                        : 'text-gray-500 hover:text-[#00796B]'
-                    }`}
-                  >
-                    {likedPosts[post.id] ? (
-                      <HeartSolidIcon className="h-4 w-4 mr-1" />
-                    ) : (
-                      <HeartIcon className="h-4 w-4 mr-1" />
-                    )}
-                    {post.likes || 0}
-                  </button>
-                </div>
-                <span className="text-[#00796B]">
-                  {post.readTime}
-                </span>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      {/* Modal de Post */}
-      {selectedPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative">
-            <button
-              onClick={() => setSelectedPost(null)}
-              className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg text-gray-600 hover:text-red-600 hover:bg-red-50 transform hover:scale-110 transition-all duration-200 z-50"
-              aria-label="Cerrar"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-            
-            <article className="p-6">
-              {selectedPost.thumbnail && (
-                <div className="relative w-full h-[500px] mb-8">
-                  <img
-                    src={getImageUrl(selectedPost.thumbnail)}
-                    alt={selectedPost.title}
-                    className="w-full h-full object-cover rounded-xl shadow-lg"
-                  />
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {selectedPost.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#E0F2F1] text-[#00796B]"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {selectedPost.title}
-              </h1>
-
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-8">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-1" />
-                    {new Date(selectedPost.createdAt).toLocaleDateString()}
-                  </span>
-                  <span className="flex items-center">
-                    <EyeIcon className="h-4 w-4 mr-1" />
-                    {selectedPost.views || 0} vistas
-                  </span>
-                  <button
-                    onClick={(e) => handleLike(selectedPost.id, e)}
-                    className={`flex items-center transition-colors ${
-                      likedPosts[selectedPost.id] 
-                        ? 'text-[#00796B] hover:text-[#006C73]' 
-                        : 'text-gray-500 hover:text-[#00796B]'
-                    }`}
-                  >
-                    {likedPosts[selectedPost.id] ? (
-                      <HeartSolidIcon className="h-4 w-4 mr-1" />
-                    ) : (
-                      <HeartIcon className="h-4 w-4 mr-1" />
-                    )}
-                    {selectedPost.likes || 0} likes
-                  </button>
-                </div>
-                <span className="text-[#00796B]">
-                  {selectedPost.readTime}
-                </span>
-              </div>
-
-              <div 
-                className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-              />
-            </article>
+      {/* === Magazine Layout (Tailwind Only) === */}
+      <div className="min-h-screen bg-white">
+        <main className="max-w-6xl mx-auto px-4 py-10">
+          {/* Page Header */}
+          <div className="text-center mb-16" data-aos="fade-up">
+            <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+              Blog IPPL
+            </h1>
+            <p className="mt-4 text-xl text-gray-500 max-w-3xl mx-auto">
+              Artículos, noticias y recursos sobre psicología y salud mental
+            </p>
           </div>
-        </div>
-      )}
+
+
+          {/* === Featured Post === */}
+          {featuredPost && (
+            <article
+              className="mb-14 group cursor-pointer"
+              onClick={() => handlePostClick(featuredPost)}
+              data-aos="zoom-in-up"
+            >
+              <div className="relative overflow-hidden rounded-xl bg-gray-100">
+                <div className="aspect-[2/1] w-full">
+                  {featuredPost.thumbnail ? (
+                    <img
+                      src={getImageUrl(featuredPost.thumbnail)}
+                      alt={featuredPost.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full grid place-items-center text-gray-400">Sin imagen</div>
+                  )}
+                </div>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                {/* Content over image */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
+                  <div className="flex items-center gap-3 mb-4">
+                    {featuredPost.tags && featuredPost.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {featuredPost.tags.map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 text-sm text-white/90">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>{new Date(featuredPost.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl font-extrabold mb-3 group-hover:text-teal-300 transition-colors">
+                    {featuredPost.title}
+                  </h2>
+
+                  {featuredPost.excerpt && (
+                    <p className="text-white/90 mb-4 max-w-3xl">{featuredPost.excerpt}</p>
+                  )}
+
+                  <div className="flex items-center gap-6 text-sm text-white/90">
+                    <div className="flex items-center gap-1">
+                      <EyeIcon className="h-4 w-4" />
+                      <span>{featuredPost.views?.toLocaleString?.() ?? featuredPost.views ?? 0}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLike(featuredPost.id, e);
+                      }}
+                      className={`flex items-center gap-1 transition-colors ${
+                        likedPosts[featuredPost.id] ? 'text-teal-300' : 'hover:text-teal-200'
+                      }`}
+                    >
+                      {likedPosts[featuredPost.id] ? (
+                        <HeartSolidIcon className="h-4 w-4" />
+                      ) : (
+                        <HeartIcon className="h-4 w-4" />
+                      )}
+                      <span>{featuredPost.likes || 0}</span>
+                    </button>
+                    {featuredPost.readTime && <span>{featuredPost.readTime} de lectura</span>}
+                  </div>
+                </div>
+              </div>
+            </article>
+          )}
+
+          {/* === Posts Grid (restPosts) === */}
+          <div className="grid gap-8 md:grid-cols-2">
+            {posts.map((post, idx) => (
+              <article
+                key={post.id}
+                className="group cursor-pointer"
+                onClick={() => handlePostClick(post)}
+                data-aos="zoom-in-up"
+                data-aos-delay={idx * 80}
+              >
+                {/* Image */}
+                <div className="overflow-hidden rounded-lg bg-gray-100 mb-4">
+                  <div className="aspect-[3/2] w-full">
+                    {post.thumbnail ? (
+                      <img
+                        src={getImageUrl(post.thumbnail)}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full grid place-items-center text-gray-400">Sin imagen</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Tags + date */}
+                  <div className="flex items-center flex-wrap gap-3">
+                    {post.tags?.[0] && (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-800 px-2.5 py-1 text-xs font-medium">
+                        {post.tags[0]}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-teal-700 transition-colors leading-tight">
+                    {post.title}
+                  </h3>
+
+                  {/* Excerpt */}
+                  {post.excerpt && (
+                    <p className="text-gray-600 leading-relaxed">{post.excerpt}</p>
+                  )}
+
+                  {/* Meta */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <EyeIcon className="h-4 w-4" />
+                        <span>{post.views?.toLocaleString?.() ?? post.views ?? 0}</span>
+                      </div>
+                      <button
+                        onClick={(e) => handleLike(post.id, e)}
+                        className={`flex items-center gap-1 transition-colors ${
+                          likedPosts[post.id] ? 'text-teal-700' : 'hover:text-teal-700'
+                        }`}
+                      >
+                        {likedPosts[post.id] ? (
+                          <HeartSolidIcon className="h-4 w-4" />
+                        ) : (
+                          <HeartIcon className="h-4 w-4" />
+                        )}
+                        <span>{post.likes || 0}</span>
+                      </button>
+                    </div>
+                    {post.readTime && (
+                      <span className="text-sm text-gray-500">{post.readTime}</span>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {/* (Opcional) CTA */}
+          {/* <div className="mt-14 text-center">
+            <button className="inline-flex items-center px-5 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition">
+              Explorar más contenido
+            </button>
+          </div> */}
+        </main>
+
+        {/* === Modal de Post (tu versión actual, sin cambios funcionales) === */}
+        {selectedPost && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative">
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg text-gray-600 hover:text-red-600 hover:bg-red-50 transform hover:scale-110 transition-all duration-200 z-50"
+                aria-label="Cerrar"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+
+              <article className="p-6">
+                {selectedPost.thumbnail && (
+                  <div className="relative w-full h-[460px] mb-8">
+                    <img
+                      src={getImageUrl(selectedPost.thumbnail)}
+                      alt={selectedPost.title}
+                      className="w-full h-full object-cover rounded-xl shadow-lg"
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {selectedPost.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                  {selectedPost.title}
+                </h1>
+
+                <div className="flex items-center justify-between text-sm text-gray-500 mb-8">
+                  <div className="flex items-center space-x-4">
+                    <span className="flex items-center">
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      {new Date(selectedPost.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="flex items-center">
+                      <EyeIcon className="h-4 w-4 mr-1" />
+                      {selectedPost.views || 0} vistas
+                    </span>
+                    <button
+                      onClick={(e) => handleLike(selectedPost.id, e)}
+                      className={`flex items-center transition-colors ${
+                        likedPosts[selectedPost.id]
+                          ? 'text-teal-700 hover:text-teal-800'
+                          : 'text-gray-500 hover:text-teal-700'
+                      }`}
+                    >
+                      {likedPosts[selectedPost.id] ? (
+                        <HeartSolidIcon className="h-4 w-4 mr-1" />
+                      ) : (
+                        <HeartIcon className="h-4 w-4 mr-1" />
+                      )}
+                      {selectedPost.likes || 0} likes
+                    </button>
+                  </div>
+                  {selectedPost.readTime && (
+                    <span className="text-teal-700">{selectedPost.readTime}</span>
+                  )}
+                </div>
+
+                <div
+                  className="prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                />
+              </article>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -58,6 +58,11 @@ class PostsService {
 		return res.data;
 	}
 
+	async getPostBySection(section: string): Promise<PostsResponse>{
+		const res = await api.get<PostsResponse>(`/posts/${section}`)
+		return res.data;
+	}
+
 	async createPost(postData: FormData): Promise<PostResponse> {
 		const res = await api.post('/posts', postData);
 		return res.data;

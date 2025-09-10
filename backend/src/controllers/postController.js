@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Post } = require('../../models');
+const { Post, sequelize } = require('../../models');
 const { toPostDTO, toPostDTOList } = require('../../mappers/PostMapper');
 const {toArray} = require("funciones-basicas");
 
@@ -63,6 +63,20 @@ const getAllPosts = async (req, res) => {
     return res.status(500).json({ message: 'Error al obtener posts' });
   }
 };
+
+const getPostBySection = async (req, res) =>{
+  const {section} = req.params;
+  try{
+    const posts = await Post.findAll({
+      where: {active: true, section},
+      order: [['publishedAt', 'DESC'], ['createdAt', 'DESC']],
+    });
+    return res.json({posts: toPostDTOList(posts)});
+  } catch (e){
+    console.error("Error loading posts by section");
+    return res.status(500).json({ message: 'Error loading posts by section' });
+  }
+}
 
 const getPostBySlug = async (req, res) => {
   try {
@@ -474,6 +488,7 @@ const getPostsStats = async (req, res) => {
 
 module.exports = {
   getAllPosts,
+  getPostBySection,
   getPostBySlug,
   createPost,
   updatePost,

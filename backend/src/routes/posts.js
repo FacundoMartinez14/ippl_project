@@ -42,6 +42,7 @@ const upload = multer({ storage: storage });
 
 // Rutas públicas
 router.get('/', postController.getAllPosts);
+router.get('/:section', postController.getPostBySection);
 router.get('/slug/:slug', postController.getPostBySlug);
 
 // Rutas protegidas
